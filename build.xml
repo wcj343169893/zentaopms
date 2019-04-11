@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project name="Zentao" default="build">
+	<property file="build.properties" />
+
+	<!-- The set of files we're going to package Exclude the cli scripts, as 
+		they get installed separately. -->
+	<fileset id="libs" dir="./">
+		<include name="**" />
+		<exclude name="tests/**" />
+		<exclude name=".settings/**" />
+	</fileset>
+	<!-- Copy all the files to build/ so they can be packaged up. -->
+	<target name="copy-files">
+		<mkdir dir="${dist.dir}" />
+		<copy todir="${dist.dir}">
+			<fileset refid="libs" />
+		</copy>
+	</target>
+	<!-- Top level easy to type targets -->
+	<target name="build" depends="copy-files" >
+		<echo>build success ...</echo>
+	</target>
+</project>
+
