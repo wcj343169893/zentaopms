@@ -9,6 +9,7 @@ ALTER TABLE `zt_cron`
 ```
 
 如果get方式或者post方式是https的链接地址，必须保证
+
 1.php安装了openssl扩展
   ``` bash
   [root@bbbb ~]# echo '<?php phpinfo(); ?>' | php 2>&1 |grep -i ssl
@@ -24,6 +25,7 @@ openssl.cafile => no value => no value
 openssl.capath => no value => no value
 Native OpenSSL support => enabled
   ```
+  
 2.php能执行/usr/bin/curl,直接shell执行curl和php执行返回的内容一致
 ``` bash
 [root@bbbb ~]# echo '<?php is_executable(`/usr/bin/curl`); ?>' | php
