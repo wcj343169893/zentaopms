@@ -7,6 +7,8 @@
 	<fileset id="libs" dir="./">
 		<include name="**" />
 		<exclude name="tests/**" />
+		<exclude name="www/install.php" />
+		<exclude name="www/upgrade.php" />
 		<exclude name=".settings/**" />
 	</fileset>
 	<!-- Copy all the files to build/ so they can be packaged up. -->
