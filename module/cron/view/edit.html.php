@@ -62,6 +62,10 @@
           <td><?php echo html::select('type', $lang->cron->typeList, $cron->type, "class='form-control'")?></td>
         </tr>
         <tr>
+          <th><?php echo $lang->cron->data;?></th>
+          <td colspan='2'><?php echo html::input('data', $cron->data, "class='form-control'")?></td><td></td>
+        </tr>
+        <tr>
           <td colspan='3' class='text-center'><?php echo html::submitButton();?></td>
         </tr>
       </table>
