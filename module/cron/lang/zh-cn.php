@@ -21,6 +21,7 @@ $lang->cron->status   = '状态';
 $lang->cron->type     = '任务类型';
 $lang->cron->remark   = '备注';
 $lang->cron->lastTime = '最后执行';
+$lang->cron->data = 'Post数据';
 
 $lang->cron->turnonList['1'] = '打开';
 $lang->cron->turnonList['0'] = '关闭';
@@ -31,6 +32,8 @@ $lang->cron->statusList['stop']    = '停止';
 
 $lang->cron->typeList['zentao'] = '禅道自调用';
 $lang->cron->typeList['system'] = '操作系统命令';
+$lang->cron->typeList['get'] = 'get请求';
+$lang->cron->typeList['post'] = 'post请求';
 
 $lang->cron->toggleList['start'] = '激活';
 $lang->cron->toggleList['stop']  = '禁用';

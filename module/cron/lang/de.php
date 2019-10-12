@@ -21,6 +21,7 @@ $lang->cron->status   = 'Status';
 $lang->cron->type     = 'Typ';
 $lang->cron->remark   = 'Bemerkung';
 $lang->cron->lastTime = 'Letze Ausführung';
+$lang->cron->data = 'Data';
 
 $lang->cron->turnonList['1'] = 'On';
 $lang->cron->turnonList['0'] = 'Shutdown';
@@ -31,6 +32,8 @@ $lang->cron->statusList['stop']    = 'Gestoppt';
 
 $lang->cron->typeList['zentao'] = 'Selbstaufruf';
 $lang->cron->typeList['system'] = 'System Kommando';
+$lang->cron->typeList['get'] = 'http(s) get';
+$lang->cron->typeList['post'] = 'http(s) post';
 
 $lang->cron->toggleList['start'] = 'Aktivieren';
 $lang->cron->toggleList['stop']  = 'Deaktivieren';
