@@ -19,7 +19,7 @@ js::set('page', 'create');
 js::set('createRelease', $lang->release->create);
 js::set('createBuild', $lang->build->create);
 js::set('refresh', $lang->refresh);
-js::set('confirmDeleteTemplate', $lang->bug->confirmDeleteTemplate);
+js::set('flow', $config->global->flow);
 ?>
 <div id="mainContent" class="main-content fade">
   <div class="center-block">
@@ -35,7 +35,7 @@ js::set('confirmDeleteTemplate', $lang->bug->confirmDeleteTemplate);
         <tbody>
           <tr>
             <th class='w-110px'><?php echo $lang->bug->product;?></th>
-            <td class='w-p45-f'>
+            <td class='w-600px'>
               <div class='input-group'>
                 <?php echo html::select('product', $products, $productID, "onchange='loadAll(this.value);' class='form-control chosen control-product'");?>
                 <?php if($this->session->currentProductType != 'normal'):?>
@@ -71,6 +71,7 @@ js::set('confirmDeleteTemplate', $lang->bug->confirmDeleteTemplate);
               <div class='input-group' id='bugTypeInputGroup'>
                 <?php
                 /* Remove the unused types. */
+                unset($lang->bug->typeList['interface']);
                 unset($lang->bug->typeList['designchange']);
                 unset($lang->bug->typeList['newfeature']);
                 unset($lang->bug->typeList['trackthings']);
@@ -109,7 +110,7 @@ js::set('confirmDeleteTemplate', $lang->bug->confirmDeleteTemplate);
             </td>
           <?php $showDeadline = strpos(",$showFields,", ',deadline,') !== false;?>
           <?php if($showDeadline):?>
-            <td>
+            <td id='deadlineTd'>
               <div class='input-group'>
                 <span class='input-group-addon'><?php echo $lang->bug->deadline?></span>
                 <span><?php echo html::input('deadline', $deadline, "class='form-control form-date'");?></span>
@@ -123,21 +124,32 @@ js::set('confirmDeleteTemplate', $lang->bug->confirmDeleteTemplate);
           <tr>
             <th><?php echo $lang->bug->type;?></th>
             <td>
-              <div class='input-group' id='bugTypeInputGroup'>
-                <?php
-                /* Remove the unused types. */
-                unset($lang->bug->typeList['designchange']);
-                unset($lang->bug->typeList['newfeature']);
-                unset($lang->bug->typeList['trackthings']);
-                echo html::select('type', $lang->bug->typeList, $type, "class='form-control chosen'");
-                ?>
+              <div class='table-row'>
+                <div class='table-col' id='typeBox'>
+                  <?php
+                  /* Remove the unused types. */
+                  unset($lang->bug->typeList['interface']);
+                  unset($lang->bug->typeList['designchange']);
+                  unset($lang->bug->typeList['newfeature']);
+                  unset($lang->bug->typeList['trackthings']);
+                  echo html::select('type', $lang->bug->typeList, $type, "class='form-control chosen'");
+                  ?>
+                </div>
                 <?php if($showOS):?>
-                <span class='input-group-addon fix-border'><?php echo $lang->bug->os?></span>
-                <?php echo html::select('os', $lang->bug->osList, $os, "class='form-control chosen'");?>
+                <div class='table-col' id='osBox'>
+                  <div class='input-group'>
+                    <span class='input-group-addon fix-border'><?php echo $lang->bug->os?></span>
+                    <?php echo html::select('os', $lang->bug->osList, $os, "class='form-control chosen'");?>
+                  </div>
+                </div>
                 <?php endif;?>
                 <?php if($showBrowser):?>
-                <span class='input-group-addon fix-border'><?php echo $lang->bug->browser?></span>
-                <?php echo html::select('browser', $lang->bug->browserList, $browser, "class='form-control chosen'");?>
+                <div class='table-col'>
+                  <div class='input-group'>
+                    <span class='input-group-addon fix-border'><?php echo $lang->bug->browser?></span>
+                    <?php echo html::select('browser', $lang->bug->browserList, $browser, "class='form-control chosen'");?>
+                  </div>
+                </div>
                 <?php endif;?>
               </div>
             </td>
@@ -217,17 +229,7 @@ js::set('confirmDeleteTemplate', $lang->bug->confirmDeleteTemplate);
           <tr>
             <th><?php echo $lang->bug->steps;?></th>
             <td colspan='2'>
-              <div id='tplBoxWrapper'>
-                <div class='btn-toolbar'>
-                  <div class='btn-group'>
-                    <button id='saveTplBtn' type='button' class='btn btn-mini' data-toggle='saveTplModal'><?php echo $lang->bug->saveTemplate?></button>
-                    <button type='button' class='btn btn-mini dropdown-toggle' data-toggle='dropdown'><?php echo $lang->bug->applyTemplate?> <span class='caret'></span></button>
-                    <ul id='tplBox' class='dropdown-menu pull-right'>
-                      <?php echo $this->fetch('bug', 'buildTemplates');?>
-                    </ul>
-                  </div>
-                </div>
-              </div>
+              <?php echo $this->fetch('user', 'ajaxPrintTemplates', 'type=bug&link=steps');?>
               <?php echo html::textarea('steps', $steps, "rows='10' class='form-control'");?>
             </td>
           </tr>
@@ -286,6 +288,11 @@ js::set('confirmDeleteTemplate', $lang->bug->confirmDeleteTemplate);
              <?php endif;?>
           </tr>
           <?php endif;?>
+          <tr class='hide'>
+            <th><?php echo $lang->bug->status;?></th>
+            <td><?php echo html::hidden('status', 'active');?></td>
+          </tr>
+          <?php $this->printExtendFields('', 'table');?>
           <tr>
             <th><?php echo $lang->bug->files;?></th>
             <td colspan='2'><?php echo $this->fetch('file', 'buildform', 'fileCount=1&percent=0.85');?></td>
@@ -303,25 +310,6 @@ js::set('confirmDeleteTemplate', $lang->bug->confirmDeleteTemplate);
         </tfoot>
       </table>
     </form>
-  </div>
-</div>
-<div class="modal fade" id="saveTplModal" tabindex="-1" role="dialog">
-  <div class="modal-dialog w-600px">
-    <div class="modal-content">
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal"><i class="icon icon-close"></i></button>
-        <h4 class="modal-title"><?php echo $lang->bug->setTemplateTitle;?></h4>
-      </div>
-      <div class="modal-body">
-        <div class='input-group'>
-          <?php echo html::input('title', '' , "class='form-control'")?>
-          <?php if(common::hasPriv('bug', 'setPublic')):?>
-          <span class='input-group-addon'><?php echo html::checkbox('public', array('1' => $lang->public))?></span>
-          <?php endif;?>
-          <span class='input-group-btn'><?php echo html::submitButton('', '', 'btn btn-primary')?></span>
-        </div>
-      </div>
-    </div>
   </div>
 </div>
 <?php js::set('bugModule', $lang->bug->module);?>

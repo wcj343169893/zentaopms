@@ -1,13 +1,13 @@
 $(document).ready(function()
 {
-    if(v.showLog == 1)
+    if(showLog == 1)
     {
         setInterval('showLog()', 3000);
         showLog();
     }
 
     $('#menu li').removeClass('active').find('a[href*=xuanxuan]').parent().addClass('active');
-})
+});
 
 function showLog()
 {

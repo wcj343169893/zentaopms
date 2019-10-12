@@ -26,7 +26,7 @@
     <form class='load-indicator main-form form-ajax' method='post' target='hiddenwin' id='dataform'>
       <table class='table table-form'>
         <tr>
-          <th><?php echo $lang->project->name;?></th>
+          <th class='w-120px'><?php echo $lang->project->name;?></th>
           <td><?php echo html::input('name', $project->name, "class='form-control' required");?></td><td></td>
         </tr>
         <tr>
@@ -150,6 +150,7 @@
           <th><?php echo $lang->project->desc;?></th>
           <td colspan='2'><?php echo html::textarea('desc', htmlspecialchars($project->desc), "rows='6' class='form-control kindeditor' hidefocus='true'");?></td>
         </tr>
+        <?php $this->printExtendFields($project, 'table');?>
         <tr>
           <th><?php echo $lang->project->acl;?></th>
           <td colspan='2'><?php echo nl2br(html::radio('acl', $lang->project->aclList, $project->acl, "onclick='setWhite(this.value);'", 'block'));?></td>

@@ -1,8 +1,9 @@
+<?php if(isset($pageCSS)) css::internal($pageCSS);?>
 <div class="detail">
   <h2 class="detail-title"><span class="label-id"><?php echo $story->id?></span> <span class="label label-story"><?php echo $lang->story->common?></span> <span class="title"><?php echo $story->title;?></span></h2>
   <div class="detail-content article-content">
     <div class="infos">
-      <span class="status-story status-draft"><span class="label label-dot"></span> <?php echo $lang->story->statusList[$story->status];?></span>
+      <span class="status-story status-draft"><span class="label label-dot"></span> <?php echo $this->processStatus('story', $story);?></span>
       <span><?php echo $lang->story->stage;?> <?php echo $lang->story->stageList[$story->stage];?></span>
       <span><?php echo $lang->story->estimate;?> <?php echo $story->estimate;?></span>
     </div>
@@ -39,7 +40,7 @@
     <table class="table table-data">
       <tbody>
       <tr>
-        <th><?php echo $lang->story->product;?></th>
+        <th class='w-100px'><?php echo $lang->story->product;?></th>
         <td><?php echo html::a($this->createLink('product', 'view', "productID=$story->product"), $product->name);?></td>
       </tr>
       <?php if($product->type != 'normal'):?>
@@ -105,7 +106,7 @@
       </tr>
       <tr>
         <th><?php echo $lang->story->status;?></th>
-        <td><span class='status-<?php echo $story->status?>'><span class="label label-dot"></span> <?php echo $lang->story->statusList[$story->status];?></span></td>
+        <td><span class='status-<?php echo $story->status?>'><span class="label label-dot"></span> <?php echo $this->processStatus('story', $story);?></span></td>
       </tr>
       <tr>
         <th><?php echo $lang->story->stage;?></th>
@@ -153,7 +154,7 @@
           {
               foreach($mailto as $account)
               {
-                  if(empty($account)) continue; echo "<span>" . $users[trim($account)] . '</span> &nbsp;';
+                  if(empty($account)) continue; echo "<span>" . zget($users, trim($account)) . '</span> &nbsp;';
               }
           }
           ?>
@@ -199,7 +200,7 @@
         <?php if($config->global->flow != 'onlyStory'):?>
         <?php if(!empty($fromBug)):?>
         <tr class='text-top'>
-          <th class='w-70px'><?php echo $lang->story->legendFromBug;?></th>
+          <th class='thWidth'><?php echo $lang->story->legendFromBug;?></th>
           <td class='pd-0'>
             <ul class='list-unstyled'>
                 <?php echo "<li title='#$fromBug->id $fromBug->title'>" . html::a($this->createLink('bug', 'view', "bugID=$fromBug->id"), "#$fromBug->id $fromBug->title") . '</li>';?>
@@ -208,7 +209,7 @@
         </tr>
         <?php endif;?>
         <tr class='text-top'>
-          <th class='w-70px'><?php echo $lang->story->legendBugs;?></th>
+          <th class='thWidth'><?php echo $lang->story->legendBugs;?></th>
           <td class='pd-0'>
             <?php if(empty($bugs)):?>
             <?php echo $lang->noData;?>
@@ -289,12 +290,12 @@
     <table class="table table-data">
       <tbody>
       <tr>
-        <th class='w-70px'><?php echo $lang->story->openedBy;?></th>
-        <td><?php echo $users[$story->openedBy] . $lang->at . $story->openedDate;?></td>
+        <th class='w-100px'><?php echo $lang->story->openedBy;?></th>
+        <td><?php echo zget($users, $story->openedBy) . $lang->at . $story->openedDate;?></td>
       </tr>
       <tr>
         <th><?php echo $lang->story->assignedTo;?></th>
-        <td><?php echo $story->assignedTo ? $users[$story->assignedTo] . $lang->at . $story->assignedDate : $lang->noData;?></td>
+        <td><?php echo $story->assignedTo ? zget($users, $story->assignedTo) . $lang->at . $story->assignedDate : $lang->noData;?></td>
       </tr>
       <tr>
         <th><?php echo $lang->story->reviewedBy;?></th>
@@ -307,7 +308,7 @@
           }
           else
           {
-              foreach($reviewedBy as $account) echo ' ' . $users[trim($account)];
+              foreach($reviewedBy as $account) echo ' ' . zget($users, trim($account));
           }
           ?>
         </td>
@@ -318,7 +319,7 @@
       </tr>
       <tr>
         <th><?php echo $lang->story->closedBy;?></th>
-        <td><?php echo $story->closedBy ? $users[$story->closedBy] . $lang->at . $story->closedDate : $lang->noData;?></td>
+        <td><?php echo $story->closedBy ? zget($users, $story->closedBy) . $lang->at . $story->closedDate : $lang->noData;?></td>
       </tr>
       <tr>
         <th><?php echo $lang->story->closedReason;?></th>
@@ -334,12 +335,14 @@
       </tr>
       <tr>
         <th><?php echo $lang->story->lastEditedBy;?></th>
-        <td><?php echo $story->lastEditedBy ? $users[$story->lastEditedBy] . $lang->at . $story->lastEditedDate : $lang->noData;?></td>
+        <td><?php echo $story->lastEditedBy ? zget($users, $story->lastEditedBy) . $lang->at . $story->lastEditedDate : $lang->noData;?></td>
       </tr>
       </tbody>
     </table>
   </div>
 </details>
-
 <?php $actionFormLink = $this->createLink('action', 'comment', "objectType=story&objectID=$story->id");?>
 <?php include '../../common/view/action.html.php';?>
+<script>
+<?php if(isset($pageJS)) echo $pageJS;?>
+</script>

@@ -34,6 +34,11 @@ js::set('page', 'assignedto');
           <th class='w-80px'><?php echo $lang->bug->assignBug;?></th>
           <td class='w-p25-f'><?php echo html::select('assignedTo', $users, $bug->assignedTo, "class='form-control chosen'");?></td><td></td>
         </tr>  
+        <tr class='hide'>
+          <th><?php echo $lang->bug->status;?></th>
+          <td><?php echo html::hidden('status', $bug->status);?></td>
+        </tr>
+        <?php $this->printExtendFields($bug, 'table');?>
         <tr>
           <th><?php echo $lang->bug->mailto;?></th>
           <td colspan='2'><?php echo html::select('mailto[]', $users, str_replace(' ', '', $bug->mailto), 'class="form-control chosen" multiple');?></td>

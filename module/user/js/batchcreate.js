@@ -1,3 +1,11 @@
+/**
+ * Change group by role.
+ * 
+ * @param  string $role 
+ * @param  int    $i 
+ * @access public
+ * @return void
+ */
 function changeGroup(role, i)
 {
     if(role && roleGroup[role])
@@ -10,15 +18,34 @@ function changeGroup(role, i)
     }
     $('#group' + i).trigger('chosen:updated');
 }
+
+/**
+ * Toggle checkbox and check password strength.
+ * 
+ * @param  object $obj 
+ * @param  int    $i 
+ * @access public
+ * @return void
+ */
 function toggleCheck(obj, i)
 {
-    if($(obj).val() == '')
+    var $this    = $(obj);
+    var password = $this.val();
+    var $ditto   = $('#ditto' + i);
+    var $passwordStrength = $this.closest('.input-group').find('.passwordStrength');
+    if(password == '')
     {
-        $('#ditto' + i).attr('checked', true);
+        $ditto.attr('checked', true);
+        $ditto.closest('.input-group-addon').show();
+        $passwordStrength.hide();
+        $passwordStrength.html('');
     }
     else
     {
-        $('#ditto' + i).removeAttr('checked');
+        $ditto.removeAttr('checked');
+        $ditto.closest('.input-group-addon').hide();
+        $passwordStrength.html(passwordStrengthList[computePasswordStrength(password)]);
+        $passwordStrength.show();
     }
 }
 

@@ -20,19 +20,24 @@
       <small><?php echo $lang->arrow . ' ' . $lang->entry->edit;?></small>
     </h2>
   </div>
-  <form id='entryForm' method='post' class='ajaxForm'>
+  <form id='entryForm' method='post' class='form-ajax'>
     <table class='table table-form'>
       <tr>
         <th class='w-80px'><?php echo $lang->entry->name;?></th>
         <td><?php echo html::input('name', $entry->name, "class='form-control' title='{$lang->entry->note->name}' placeholder='{$lang->entry->note->name}'");?></td>
-        <td class='w-120px'></td>
+        <td class='w-200px'></td>
       </tr>
       <tr>
         <th><?php echo $lang->entry->code;?></th>
         <td><?php echo html::input('code', $entry->code, "class='form-control' title='{$lang->entry->note->code}' placeholder='{$lang->entry->note->code}'");?></td>
       </tr>
       <tr>
+        <th><?php echo $lang->entry->freePasswd;?></th>
+        <td><?php echo html::radio('freePasswd', $lang->entry->freePasswdList, $entry->freePasswd);?></td>
+        <td></td>
+      </tr>
       <tr>
+      <tr class="<?php if($entry->freePasswd == 1) echo 'hidden'?>">
         <th><?php echo $lang->entry->account;?></th>
         <td><?php echo html::select("account", $users, $entry->account, "class='form-control chosen'");?></td>
       </tr>
@@ -59,8 +64,8 @@
         <th></th>
         <td>
           <?php echo html::submitButton();?>
-          <?php echo html::a($config->entry->help, $lang->entry->help, '_blank', "class='help'");?>
-          <?php echo html::a($config->entry->notify, $lang->entry->notify, '_blank', "class='help'");?>
+          <?php echo html::a($lang->entry->helpLink, $lang->entry->help, '_blank', "class='help'");?>
+          <?php echo html::a($lang->entry->notifyLink, $lang->entry->notify, '_blank', "class='help'");?>
         </td>
       </tr>
     </table>

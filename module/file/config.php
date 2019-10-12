@@ -30,3 +30,9 @@ $config->file->ueditor["videoMaxSize"]    = 102400000;
 $config->file->ueditor["videoAllowFiles"] = array(".flv", ".swf", ".mkv", ".avi", ".rm", ".rmvb", ".mpeg", ".mpg", ".ogg", ".ogv", ".mov", ".wmv", ".mp4", ".webm", ".mp3", ".wav", ".mid");
 $config->file->ueditor["videoUrlPrefix"]  = "";
 $config->file->ueditor["videoPathFormat"] = "";
+
+$config->file->objectType['stepResult'] = 'testcase';
+
+$config->file->convertURL['common']['view']       = '1';
+$config->file->convertURL['story']['edit']        = '1';
+$config->file->convertURL['testsuite']['libview'] = '1';

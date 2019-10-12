@@ -23,7 +23,7 @@
   <form class='main-form' method='post' target='hiddenwin'>
     <table class='table table-form'> 
       <tr>
-        <th><?php echo $lang->company->name;?></th>
+        <th class='thWidth'><?php echo $lang->company->name;?></th>
         <td><?php echo html::input('name', $company->name, "class='form-control'");?></td>
       </tr>  
       <tr>

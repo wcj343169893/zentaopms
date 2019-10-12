@@ -44,10 +44,12 @@ class releaseModel extends model
      * Get list of releases.
      * 
      * @param  int    $productID 
+     * @param  int    $branch 
+     * @param  string $type 
      * @access public
      * @return array
      */
-    public function getList($productID, $branch = 0)
+    public function getList($productID, $branch = 0, $type = 'all')
     {
         return $this->dao->select('t1.*, t2.name as productName, t3.id as buildID, t3.name as buildName')
             ->from(TABLE_RELEASE)->alias('t1')
@@ -55,6 +57,7 @@ class releaseModel extends model
             ->leftJoin(TABLE_BUILD)->alias('t3')->on('t1.build = t3.id')
             ->where('t1.product')->eq((int)$productID)
             ->beginIF($branch)->andWhere('t1.branch')->eq($branch)->fi()
+            ->beginIF($type != 'all')->andWhere('t1.status')->eq($type)->fi()
             ->andWhere('t1.deleted')->eq(0)
             ->orderBy('t1.date DESC')
             ->fetchAll();
@@ -64,6 +67,7 @@ class releaseModel extends model
      * Get last release.
      * 
      * @param  int    $productID 
+     * @param  int    $branch 
      * @access public
      * @return bool | object 
      */
@@ -81,6 +85,7 @@ class releaseModel extends model
      * Get release builds from product.
      * 
      * @param  int    $productID 
+     * @param  int    $branch 
      * @access public
      * @return void
      */
@@ -98,6 +103,7 @@ class releaseModel extends model
      * Create a release.
      * 
      * @param  int    $productID 
+     * @param  int    $branch 
      * @access public
      * @return int
      */
@@ -106,6 +112,11 @@ class releaseModel extends model
         $productID = (int)$productID;
         $branch    = (int)$branch;
         $buildID   = 0;
+
+        /* Check date must be not more than today. */
+        if($this->post->date > date('Y-m-d')) return dao::$errors[] = $this->lang->release->errorDate;
+
+        /* Auto create build when release is not link build. */
         if($this->post->build == false && $this->post->name)
         {
             $build = $this->dao->select('*')->from(TABLE_BUILD)
@@ -120,13 +131,15 @@ class releaseModel extends model
             }
             else
             {
-                $build = fixer::input('post')
-                    ->add('product', (int)$productID)
-                    ->add('builder', $this->app->user->account)
-                    ->add('branch', $branch)
-                    ->stripTags($this->config->release->editor->create['id'], $this->config->allowedTags)
-                    ->remove('marker,build,files,labels,uid')
-                    ->get();
+                $build = new stdclass();
+                $build->product = (int)$productID;
+                $build->branch  = (int)$branch;
+                $build->name    = $this->post->name;
+                $build->date    = $this->post->date;
+                $build->builder = $this->app->user->account;
+                $build->desc    = $this->post->desc;
+                $build->project = 0;
+
                 $build = $this->loadModel('file')->processImgURL($build, $this->config->release->editor->create['id']);
                 $this->dao->insert(TABLE_BUILD)->data($build)
                     ->autoCheck()
@@ -223,6 +236,7 @@ class releaseModel extends model
     public function linkStory($releaseID)
     {
         $release = $this->getByID($releaseID);
+        $product = $this->loadModel('product')->getByID($release->product);
 
         $release->stories .= ',' . join(',', $this->post->stories);
         $this->dao->update(TABLE_RELEASE)->set('stories')->eq($release->stories)->where('id')->eq((int)$releaseID)->exec();
@@ -231,7 +245,12 @@ class releaseModel extends model
             $this->loadModel('story');
             foreach($this->post->stories as $storyID)
             {
+                /* Reset story stagedBy field for auto compute stage. */
+                $this->dao->update(TABLE_STORY)->set('stagedBy')->eq('')->where('id')->eq($storyID)->exec();
+                if($product->type != 'normal') $this->dao->update(TABLE_STORYSTAGE)->set('stagedBy')->eq('')->where('story')->eq($storyID)->andWhere('branch')->eq($release->branch)->exec();
+
                 $this->story->setStage($storyID);
+
                 $this->loadModel('action')->create('story', $storyID, 'linked2release', '', $releaseID);
             }
         }
@@ -280,6 +299,7 @@ class releaseModel extends model
      * Link bugs.
      * 
      * @param  int    $releaseID 
+     * @param  string $type 
      * @access public
      * @return void
      */
@@ -301,6 +321,7 @@ class releaseModel extends model
      * 
      * @param  int    $releaseID 
      * @param  int    $bugID 
+     * @param  string $type 
      * @access public
      * @return void
      */
@@ -317,6 +338,7 @@ class releaseModel extends model
      * Batch unlink bug.
      * 
      * @param  int    $releaseID 
+     * @param  string $type 
      * @access public
      * @return void
      */

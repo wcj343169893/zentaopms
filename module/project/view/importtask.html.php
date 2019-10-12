@@ -38,7 +38,7 @@
           <th class='w-user'><?php echo $lang->task->assignedTo;?></th>
           <th class='w-hour'><?php echo $lang->task->leftAB;?></th>
           <th class='w-date'><?php echo $lang->task->deadlineAB;?></th>
-          <th class='w-status'><?php echo $lang->statusAB;?></th>
+          <th class='w-70px'><?php echo $lang->statusAB;?></th>
           <th><?php echo $lang->task->story;?></th>
         </tr>
       </thead>
@@ -59,11 +59,7 @@
           <td <?php echo $class;?>><?php echo $task->assignedToRealName;?></td>
           <td><?php echo $task->left;?></td>
           <td class=<?php if(isset($task->delay)) echo 'delayed';?>><?php if(substr($task->deadline, 0, 4) > 0) echo $task->deadline;?></td>
-          <td>
-            <span class='status-task status-<?php echo $task->status;?>'>
-              <?php echo $lang->task->statusList[$task->status];?>
-            </span>
-          </td>
+          <td><span class='status-task status-<?php echo $task->status;?>'><?php echo $this->processStatus('task', $task);?></span></td>
           <td class='text-left nobr'>
             <?php
             if($task->storyID)

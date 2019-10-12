@@ -510,6 +510,9 @@ class fileModel extends model
      */
     public function parseCSV($fileName)
     {
+        /* Parse file only in zentao. */
+        if(strpos(realpath($fileName), $this->app->getBasePath()) !== 0) return array();
+
         $content = file_get_contents($fileName);
         /* Fix bug #890. */
         $content = str_replace("\x82\x32", "\x10", $content);
@@ -793,9 +796,31 @@ class fileModel extends model
         {
             if(empty($field) or empty($data->$field)) continue;
             $data->$field = preg_replace('/ src="{([0-9]+)(\.(\w+))?}" /', ' src="' . helper::createLink('file', 'read', "fileID=$1", "$3") . '" ', $data->$field);
+
+            /* Convert plain text URLs into HTML hyperlinks. */
+            $moduleName = $this->app->getModuleName();
+            $methodName = $this->app->getMethodName();
+            if(isset($this->config->file->convertURL['common'][$methodName]) or isset($this->config->file->convertURL[$moduleName][$methodName]))
+            {
+                $fieldData = $data->$field;
+                preg_match_all('/(<a[^>]*>[^<]*<\/a>)/i', $fieldData, $aTags);
+                preg_match_all('/(<img[^>]*>)/i', $fieldData, $imgTags);
+                preg_match_all('/(<iframe[^>]*>[^<]*<\/iframe>)/i', $fieldData, $iframeTags);
+
+                foreach($aTags[0] as $i => $aTag) $fieldData = str_replace($aTag, "<A_{$i}>", $fieldData);
+                foreach($imgTags[0] as $i => $imgTag) $fieldData = str_replace($imgTag, "<IMG_{$i}>", $fieldData);
+                foreach($iframeTags[0] as $i => $iframeTag) $fieldData = str_replace($iframeTag, "<IFRAME_{$i}>", $fieldData);
+
+                $fieldData = preg_replace('/(http:\/\/|https:\/\/)((\w|=|\?|\.|\/|\&|-|%|;)+)/i', "<a href='\\0' target='_blank'>\\0</a>", $fieldData);
+
+                foreach($aTags[0] as $i => $aTag) $fieldData = str_replace("<A_{$i}>", $aTag, $fieldData);
+                foreach($imgTags[0] as $i => $imgTag) $fieldData = str_replace("<IMG_{$i}>", $imgTag, $fieldData);
+                foreach($iframeTags[0] as $i => $iframeTag) $fieldData = str_replace("<IFRAME_{$i}>", $iframeTag, $fieldData);
+
+                $data->$field = $fieldData;
+            }
         }
         return $data;
-
     }
 
     /**
@@ -820,5 +845,41 @@ class fileModel extends model
             }
             unset($_SESSION['album'][$uid]);
         }
+    }
+
+    /**
+     * Send the download header to the client.
+     * 
+     * @param  string    $fileName 
+     * @param  string    $fileType 
+     * @param  string    $content 
+     * @access public
+     * @return void
+     */
+    public function sendDownHeader($fileName, $fileType, $content)
+    {
+        /* Clean the ob content to make sure no space or utf-8 bom output. */
+        $obLevel = ob_get_level();
+        for($i = 0; $i < $obLevel; $i++) ob_end_clean();
+
+        /* Set the downloading cookie, thus the export form page can use it to judge whether to close the window or not. */
+        setcookie('downloading', 1);
+
+        /* Append the extension name auto. */
+        $extension = '.' . $fileType;
+        if(strpos($fileName, $extension) === false) $fileName .= $extension;
+
+        /* urlencode the filename for ie. */
+        if(strpos($this->server->http_user_agent, 'MSIE') !== false or strpos($this->server->http_user_agent, 'Trident') !== false or strpos($this->server->http_user_agent, 'Edge') !== false) $fileName = urlencode($fileName);
+
+        /* Judge the content type. */
+        $mimes = $this->config->file->mimes;
+        $contentType = isset($mimes[$fileType]) ? $mimes[$fileType] : $mimes['default'];
+
+        header("Content-type: $contentType");
+        header("Content-Disposition: attachment; filename=\"$fileName\"");
+        header("Pragma: no-cache");
+        header("Expires: 0");
+        die($content);
     }
 }

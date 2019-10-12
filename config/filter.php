@@ -45,6 +45,7 @@ $filter->mail       = new stdclass();
 $filter->user       = new stdclass();
 $filter->block      = new stdclass();
 $filter->file       = new stdclass();
+$filter->translate  = new stdclass();
 
 $filter->block->default          = new stdclass();
 $filter->block->main             = new stdclass();
@@ -120,6 +121,10 @@ $filter->product->export->cookie['checkedItem']       = 'reg::checked';
 
 $filter->project->default->cookie['lastProject']     = 'int';
 $filter->project->default->cookie['projectMode']     = 'code';
+$filter->project->story->cookie['storyModuleParam']  = 'int';
+$filter->project->story->cookie['storyPreProjectID'] = 'int';
+$filter->project->story->cookie['storyProductParam'] = 'int';
+$filter->project->story->cookie['storyBranchParam']  = 'reg::checked';
 $filter->project->story->cookie['projectStoryOrder'] = 'reg::orderBy';
 $filter->project->task->cookie['moduleBrowseParam']  = 'int';
 $filter->project->task->cookie['preProjectID']       = 'int';
@@ -210,3 +215,5 @@ $filter->git->cat->get['repoUrl']  = 'reg::base64';
 $filter->git->diff->get['repoUrl'] = 'reg::base64';
 $filter->svn->cat->get['repoUrl']  = 'reg::base64';
 $filter->svn->diff->get['repoUrl'] = 'reg::base64';
+
+$filter->translate->module->cookie['translateView'] = 'equal::split';

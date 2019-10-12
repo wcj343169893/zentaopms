@@ -81,12 +81,12 @@ class productplanModel extends model
     {
         $date  = date('Y-m-d');
         $plans = $this->dao->select('t1.*,t2.project')->from(TABLE_PRODUCTPLAN)->alias('t1')
-            ->leftJoin(TABLE_PROJECTPRODUCT)->alias('t2')->on('t2.plan = t1.id and t2.product = ' . $product)
+            ->leftJoin(TABLE_PROJECTPRODUCT)->alias('t2')->on("t2.plan = t1.id and t2.product = '$product'")
             ->where('t1.product')->eq($product)
             ->andWhere('t1.deleted')->eq(0)
             ->beginIF(!empty($branch))->andWhere('t1.branch')->eq($branch)->fi()
-            ->beginIF($browseType == 'unexpired')->andWhere('t1.end')->gt($date)->fi()
-            ->beginIF($browseType == 'overdue')->andWhere('t1.end')->le($date)->fi()
+            ->beginIF($browseType == 'unexpired')->andWhere('t1.end')->ge($date)->fi()
+            ->beginIF($browseType == 'overdue')->andWhere('t1.end')->lt($date)->fi()
             ->orderBy($orderBy)
             ->page($pager)
             ->fetchAll('id');
@@ -423,6 +423,32 @@ class productplanModel extends model
         }
 
         return $changes;
+    }
+
+    /**
+     * Change parent field by planID.
+     * 
+     * @param  int    $planID 
+     * @access public
+     * @return void
+     */
+    public function changeParentField($planID)
+    {
+        $plan = $this->getById($planID);
+        if($plan->parent <= 0) return true;
+
+        $childCount = count($this->getChildren($plan->parent));
+        $parent     = $childCount == 0 ? '0' : '-1';
+
+        $parentPlan = $this->dao->select('*')->from(TABLE_PRODUCTPLAN)->where('id')->eq($plan->parent)->andWhere('deleted')->eq(0)->fetch();
+        if($parentPlan)
+        {
+            $this->dao->update(TABLE_PRODUCTPLAN)->set('parent')->eq($parent)->where('id')->eq((int)$plan->parent)->exec();
+        }
+        else
+        {
+            $this->dao->update(TABLE_PRODUCTPLAN)->set('parent')->eq('0')->where('id')->eq((int)$planID)->exec();
+        }
     }
 
     /**

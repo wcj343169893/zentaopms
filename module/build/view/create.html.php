@@ -26,7 +26,7 @@
             <div class='input-group'>
               <?php echo html::select('product', $products, $product->id, "onchange='loadBranches(this.value);' class='form-control chosen' required");?>
               <?php
-              if($product->type != 'normal')
+              if($product->type != 'normal' and isset($branches[$product->branch]))
               {
                   if($product->branch) $branches = array($product->branch => $branches[$product->branch]);
                   echo "<span class='input-group-addon fix-padding fix-border'></span>" . html::select('branch', $branches, $product->branch, "class='form-control chosen'");
@@ -64,6 +64,7 @@
           <th><?php echo $lang->build->filePath;?></th>
           <td colspan='2'><?php echo html::input('filePath', '', "class='form-control' placeholder='{$lang->build->placeholder->filePath}'");?></td>
         </tr>  
+        <?php $this->printExtendFields('', 'table', 'columns=2');?>
         <tr>
           <th><?php echo $lang->build->files;?></th>
           <td colspan='2'><?php echo $this->fetch('file', 'buildForm');?></td>

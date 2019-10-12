@@ -68,7 +68,7 @@ class xuanxuan extends router
      */
     public function setClientLang($lang = '')
     {
-        $row  = $this->dbh->query('SELECT `value` FROM ' . TABLE_CONFIG . " WHERE `owner`='system' AND `module`='common' AND `section`='xuanxuan' AND `key`='xxbLang'")->fetch();
+        $row  = $this->dbh->query('SELECT `value` FROM ' . TABLE_CONFIG . " WHERE `owner`='system' AND `module`='common' AND `section`='xuanxuan' AND `key`='backendLang'")->fetch();
         $lang = empty($row) ? 'zh-cn' : $row->value;
 
         parent::setClientLang($lang);
@@ -102,13 +102,14 @@ class xuanxuan extends router
             $input = $this->decrypt($input);
 
             $this->input['rid']     = !empty($input->rid)    ? $input->rid    : '';
-            $this->input['version'] = !empty($input->v)      ? $input->v      : '';
             $this->input['userID']  = !empty($input->userID) ? $input->userID : '';
             $this->input['client']  = !empty($input->client) ? $input->client : '';
             $this->input['module']  = !empty($input->module) ? $input->module : '';
             $this->input['method']  = !empty($input->method) ? $input->method : '';
             $this->input['lang']    = !empty($input->lang)   ? $input->lang   : 'zh-cn';
             $this->input['params']  = !empty($input->params) ? $input->params : array();
+            $this->input['version'] = !empty($input->v)      ? $input->v      : '';
+            $this->input['device']  = !empty($input->d)      ? $input->d      : 'desktop';
         }
         else
         {
@@ -171,7 +172,7 @@ class xuanxuan extends router
                 $data = new stdclass();
                 $data->module = 'chat';
                 $data->method = 'kickoff';
-                $data->data   = 'Illegal Requset.';
+                $data->data   = 'Illegal Request.';
                 die($this->encrypt($data));
             }
 
@@ -184,6 +185,7 @@ class xuanxuan extends router
             {
                 $params[] = $userID;
                 $params[] = $version;
+                $params[] = $device;
             }
 
             $this->session->set('userID', $userID);
@@ -412,7 +414,7 @@ class xuanxuan extends router
         $log = "\n" . date('H:i:s') . " $message";
         if($file) $log .= " in <strong>$file</strong>";
         if($line) $log .= " on line <strong>$line</strong> ";
-        $file = $this->getLogRoot() . 'xuanxuan.log.php';
+        $file = $this->getLogRoot() . 'xuanxuan.' . date('Ymd') . '.log.php';
         if(!is_file($file)) file_put_contents($file, "<?php\n die();\n?>\n");
 
         $fh = @fopen($file, 'a');

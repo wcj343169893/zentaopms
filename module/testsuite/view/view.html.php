@@ -23,7 +23,7 @@
       <span class='label label-id'><?php echo $suite->id;?></span>
       <span class='text'><?php echo $suite->name;?></span>
       <?php if($suite->deleted):?>
-      <span class='label label-danger'><?php echo $lang->suite->deleted;?></span>
+      <span class='label label-danger'><?php echo $lang->delete;?></span>
       <?php endif; ?>
     </div>
   </div>
@@ -31,6 +31,8 @@
     <?php
     if(!$suite->deleted)
     {
+        echo $this->buildOperateMenu($suite, 'view');
+
         common::printIcon('testsuite', 'linkCase', "suiteID=$suite->id", $suite, 'button', 'link');
         common::printIcon('testsuite', 'edit',     "suiteID=$suite->id");
         common::printIcon('testsuite', 'delete',   "suiteID=$suite->id", '', 'button', 'trash', 'hiddenwin');
@@ -88,7 +90,7 @@
                 <?php echo html::a($this->createLink('testcase', 'view', "caseID=$case->id&version=$case->caseVersion"), $case->title);?>
               </td>
               <td><?php echo $lang->testcase->typeList[$case->type];?></td>
-              <td class='<?php echo $case->status;?>'><?php echo ($case->version < $case->caseVersion) ? "<span class='warning'>{$lang->testcase->changed}</span>" : $lang->testcase->statusList[$case->status];?></td>
+              <td class='<?php echo $case->status;?>'><?php echo ($case->version < $case->caseVersion) ? "<span class='warning'>{$lang->testcase->changed}</span>" : $this->processStatus('testcase', $case);?></td>
               <td class='<?php echo $case->lastRunResult;?>'><?php if($case->lastRunResult) echo $lang->testcase->resultList[$case->lastRunResult];?></td>
               <td><?php echo (common::hasPriv('testcase', 'bugs') and $case->bugs) ? html::a($this->createLink('testcase', 'bugs', "runID=0&caseID={$case->id}"), $case->bugs, '', "class='iframe'") : $case->bugs;?></td>
               <td><?php echo (common::hasPriv('testtask', 'results') and $case->results) ? html::a($this->createLink('testtask', 'results', "runID=0&caseID={$case->id}"), $case->results, '', "class='iframe'") : $case->results;?></td>
@@ -100,7 +102,7 @@
                     $unlinkURL = $this->createLink('testsuite', 'unlinkCase', "suiteID=$suite->id&caseID=$case->id&confirm=yes");
                     echo html::a("javascript:ajaxDelete(\"$unlinkURL\",\"caseList\",confirmUnlink)", '<i class="icon-unlink"></i>', '', "title='{$lang->testsuite->unlinkCase}' class='btn'");
                 }
-                common::printIcon('testtask', 'runCase', "runID=0&caseID=$case->id&version=$case->version", $suite, 'list', 'play', '', 'runCase iframe', false, "data-width='95%'");
+                if(common::hasPriv('testtask', 'runCase')) echo html::a($this->createLink('testtask', 'runCase', "runID=0&caseID=$case->id&version=$case->version"), '<i class="icon-testtask-runCase icon-play"></i>', '', "class='btn runCase iframe' data-width='95%' title={$lang->testtask->runCase}");
                 common::printIcon('testtask', 'results', "runID=0&caseID=$case->id", $suite, 'list', 'list-alt', '', 'results iframe', false, "data-width='95%'");
                 ?>
               </td>
@@ -151,6 +153,7 @@
         </div>
       </div>
     </div>
+    <?php $this->printExtendFields($suite, 'div', "position=right&inForm=0&inCell=1");?>
     <div class='cell'>
       <?php include '../../common/view/action.html.php';?>
     </div>

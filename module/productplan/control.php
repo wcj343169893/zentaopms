@@ -49,6 +49,9 @@ class productplan extends control
             $planID = $this->productplan->create();
             if(dao::isError()) $this->send(array('result' => 'fail', 'message' => dao::getError()));
             $this->loadModel('action')->create('productplan', $planID, 'opened');
+
+            $this->executeHooks($planID);
+
             if(isonlybody()) die(js::closeModal('parent.parent', '', "function(){parent.parent.$('a.refresh').click()}"));
             $this->send(array('result' => 'success', 'message' => $this->lang->saveSuccess, 'locate' => $this->createLink('productplan', 'browse', "productID=$product&branch=$branch")));
         }
@@ -96,6 +99,7 @@ class productplan extends control
                 $actionID = $this->loadModel('action')->create('productplan', $planID, 'edited');
                 $this->action->logHistory($actionID, $changes);
             }
+            $this->executeHooks($planID);
             $this->send(array('result' => 'success', 'message' => $this->lang->saveSuccess, 'locate' => inlink('view', "planID=$planID")));
         }
 
@@ -153,14 +157,18 @@ class productplan extends control
      */
     public function delete($planID, $confirm = 'no')
     {
+        $plan = $this->productplan->getById($planID);
+        if($plan->parent < 0) die(js::alert($this->lang->productplan->cannotDeleteParent));
+
         if($confirm == 'no')
         {
             die(js::confirm($this->lang->productplan->confirmDelete, $this->createLink('productPlan', 'delete', "planID=$planID&confirm=yes")));
         }
         else
         {
-            $plan = $this->productplan->getById($planID);
             $this->productplan->delete(TABLE_PRODUCTPLAN, $planID);
+            if($plan->parent > 0) $this->productplan->changeParentField($planID);
+            $this->executeHooks($planID);
 
             /* if ajax request, send result. */
             if($this->server->ajax)
@@ -270,6 +278,7 @@ class productplan extends control
             $orderBy = str_replace('id', 'order', $orderBy);
         }
 
+        $this->executeHooks($planID);
         if($plan->parent > 0)     $this->view->parentPlan    = $this->productplan->getById($plan->parent);
         if($plan->parent == '-1') $this->view->childrenPlans = $this->productplan->getChildren($plan->id);
 

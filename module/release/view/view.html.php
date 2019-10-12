@@ -33,6 +33,8 @@
     <?php
     if(!$release->deleted)
     {
+        echo $this->buildOperateMenu($release, 'view');
+
         if(common::hasPriv('release', 'changeStatus', $release))
         {
             $changedStatus = $release->status == 'normal' ? 'terminate' : 'normal';
@@ -104,10 +106,10 @@
                     </td>
                     <td><span class='label-pri <?php echo 'label-pri-' . $story->pri;?>' title='<?php echo zget($lang->story->priList, $story->pri, $story->pri);?>'><?php echo zget($lang->story->priList, $story->pri, $story->pri);?></span></td>
                     <td class='text-left nobr' title='<?php echo $story->title?>'><?php echo html::a($storyLink,$story->title, '', "class='preview'");?></td>
-                    <td><?php echo $users[$story->openedBy];?></td>
+                    <td><?php echo zget($users, $story->openedBy);?></td>
                     <td><?php echo $story->estimate;?></td>
                     <td>
-                      <span class='status-story status-<?php echo $story->status;?>'><?php echo $lang->story->statusList[$story->status];?></span>
+                      <span class='status-story status-<?php echo $story->status;?>'><?php echo $this->processStatus('story', $story);?></span>
                     </td>
                     <td><?php echo $lang->story->stageList[$story->stage];?></td>
                     <td class='c-actions'>
@@ -155,9 +157,9 @@
                     </th>
                     <th class='text-left'><?php common::printOrderLink('title',        $orderBy, $vars, $lang->bug->title);?></th>
                     <th class='w-100px'>  <?php common::printOrderLink('status',       $orderBy, $vars, $lang->bug->status);?></th>
-                    <th class='w-user'>   <?php common::printOrderLink('openedBy',     $orderBy, $vars, $lang->openedByAB);?></th>
+                    <th class='c-user'>   <?php common::printOrderLink('openedBy',     $orderBy, $vars, $lang->openedByAB);?></th>
                     <th class='w-date'>   <?php common::printOrderLink('openedDate',   $orderBy, $vars, $lang->bug->openedDateAB);?></th>
-                    <th class='w-user'>   <?php common::printOrderLink('resolvedBy',   $orderBy, $vars, $lang->bug->resolvedByAB);?></th>
+                    <th class='c-user'>   <?php common::printOrderLink('resolvedBy',   $orderBy, $vars, $lang->bug->resolvedByAB);?></th>
                     <th class='w-100px'>  <?php common::printOrderLink('resolvedDate', $orderBy, $vars, $lang->bug->resolvedDateAB);?></th>
                     <th class='w-50px'>   <?php echo $lang->actions;?></th>
                   </tr>
@@ -177,11 +179,11 @@
                     </td>
                     <td class='text-left nobr' title='<?php echo $bug->title?>'><?php echo html::a($bugLink, $bug->title, '', "class='preview'");?></td>
                     <td>
-                      <span class='status-bug status-<?php echo $bug->status?>'><?php echo zget($lang->bug->statusList, $bug->status);?></span>
+                      <span class='status-bug status-<?php echo $bug->status?>'><?php echo $this->processStatus('bug', $bug);?></span>
                     </td>
-                    <td><?php echo $users[$bug->openedBy];?></td>
+                    <td><?php echo zget($users, $bug->openedBy);?></td>
                     <td><?php echo substr($bug->openedDate, 5, 11)?></td>
-                    <td><?php echo $users[$bug->resolvedBy];?></td>
+                    <td><?php echo zget($users, $bug->resolvedBy);?></td>
                     <td><?php echo substr($bug->resolvedDate, 5, 11)?></td>
                     <td class='c-actions'>
                       <?php
@@ -266,7 +268,7 @@
                       <?php endif;?>
                     </td>
                     <td class='text-left nobr' title='<?php echo $bug->title?>'><?php echo html::a($bugLink, $bug->title, '', "class='preview'");?></td>
-                    <td><span class='status-<?php echo $bug->status?>'> <?php echo zget($lang->bug->statusList, $bug->status);?></span></td>
+                    <td><span class='status-<?php echo $bug->status?>'> <?php echo $this->processStatus('bug', $bug);?></span></td>
                     <td><?php echo zget($users, $bug->openedBy);?></td>
                     <td><?php echo $bug->openedDate?></td>
                     <td class='c-actions'>
@@ -301,7 +303,7 @@
                 <div class='detail-content'>
                   <table class='table table-data'>
                     <tr>
-                      <th class='w-80px'><?php echo $lang->release->product;?></th>
+                      <th class='w-90px'><?php echo $lang->release->product;?></th>
                       <td><?php echo $release->productName;?></td>
                     </tr>
                       <?php if($release->productType != 'normal'):?>
@@ -322,12 +324,13 @@
                     </tr>
                     <tr>
                       <th><?php echo $lang->release->status;?></th>
-                      <td><?php echo $lang->release->statusList[$release->status];?></td>
+                      <td><?php echo $this->processStatus('release', $release);?></td>
                     </tr>
                     <tr>
                       <th><?php echo $lang->release->date;?></th>
                       <td><?php echo $release->date;?></td>
                     </tr>
+                    <?php $this->printExtendFields($release, 'table', 'inForm=0');?>
                     <tr>
                       <th><?php echo $lang->release->desc;?></th>
                       <td><?php echo $release->desc;?></td>

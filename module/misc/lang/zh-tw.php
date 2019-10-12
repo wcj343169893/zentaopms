@@ -21,6 +21,7 @@ $lang->misc->zentao->labels['about']   = '關於禪道';
 $lang->misc->zentao->labels['support'] = '技術支持';
 $lang->misc->zentao->labels['cowin']   = '幫助我們';
 $lang->misc->zentao->labels['service'] = '服務列表';
+$lang->misc->zentao->labels['others']  = '其他產品';
 
 $lang->misc->zentao->icons['about']   = 'group';
 $lang->misc->zentao->icons['support'] = 'question-sign';
@@ -41,16 +42,21 @@ $lang->misc->zentao->support['ask']        = "官方問答";
 $lang->misc->zentao->support['video']      = "使用視頻";
 $lang->misc->zentao->support['qqgroup']    = "官方QQ群";
 
-$lang->misc->zentao->cowin['donate']       = "捐助我們";
 $lang->misc->zentao->cowin['reportbug']    = "彙報Bug";
 $lang->misc->zentao->cowin['feedback']     = "反饋需求";
 $lang->misc->zentao->cowin['recommend']    = "推薦給朋友";
-
 
 $lang->misc->zentao->service['zentaotrain']= '禪道使用培訓';
 $lang->misc->zentao->service['idc']        = '禪道在綫託管';
 $lang->misc->zentao->service['custom']     = '禪道定製開發';
 $lang->misc->zentao->service['servicemore']= '更多服務...';
+
+global $config;
+$lang->misc->zentao->others['chanzhi']  = "<img src='{$config->webRoot}theme/default/images/main/chanzhi.ico' /> 蟬知門戶";
+$lang->misc->zentao->others['ranzhi']   = "<img src='{$config->webRoot}theme/default/images/main/ranzhi.ico' /> 然之協同";
+$lang->misc->zentao->others['xuanxuan'] = "<img src='{$config->webRoot}theme/default/images/main/xuanxuan.ico' /> 喧喧聊天";
+$lang->misc->zentao->others['ydisk']    = "<img src='{$config->webRoot}theme/default/images/main/ydisk.ico' /> 悅庫網盤";
+$lang->misc->zentao->others['meshiot' ] = "<img src='{$config->webRoot}theme/default/images/main/meshiot.ico' /> 易天物聯";
 
 $lang->misc->mobile      = "手機訪問";
 $lang->misc->noGDLib     = "請用手機瀏覽器訪問：<strong>%s</strong>";
@@ -76,6 +82,14 @@ $lang->misc->feature = new stdclass();
 $lang->misc->feature->lastest  = '最新版本';
 $lang->misc->feature->detailed = '詳情';
 
+$lang->misc->releaseDate['11.6.3']      = '2019-09-24';
+$lang->misc->releaseDate['11.6.2']      = '2019-09-06';
+$lang->misc->releaseDate['11.6.1']      = '2019-08-23';
+$lang->misc->releaseDate['11.6.stable'] = '2019-07-12';
+$lang->misc->releaseDate['11.5.2']      = '2019-06-26';
+$lang->misc->releaseDate['11.5.1']      = '2019-06-24';
+$lang->misc->releaseDate['11.5.stable'] = '2019-05-08';
+$lang->misc->releaseDate['11.4.1']      = '2019-04-08';
 $lang->misc->releaseDate['11.4.stable'] = '2019-03-25';
 $lang->misc->releaseDate['11.3.stable'] = '2019-02-27';
 $lang->misc->releaseDate['11.2.stable'] = '2019-01-30';
@@ -100,6 +114,22 @@ $lang->misc->releaseDate['7.4.beta']    = '2015-11-13';
 $lang->misc->releaseDate['7.2.stable']  = '2015-05-22';
 $lang->misc->releaseDate['7.1.stable']  = '2015-03-07';
 $lang->misc->releaseDate['6.3.stable']  = '2014-11-07';
+
+$lang->misc->feature->all['11.6.3'][] = array('title'=>'修復Bug', 'desc' => '');
+$lang->misc->feature->all['11.6.2'][] = array('title'=>'完善細節，修復Bug', 'desc' => '');
+$lang->misc->feature->all['11.6.1'][] = array('title'=>'完善細節，修復Bug', 'desc' => '');
+
+$lang->misc->feature->all['11.6.stable'][] = array('title'=>'改善國際版界面', 'desc' => '');
+$lang->misc->feature->all['11.6.stable'][] = array('title'=>'添加翻譯功能', 'desc' => '');
+
+$lang->misc->feature->all['11.5.2'][] = array('title'=>'增加禪道安全性，增加登錄禪道弱口令檢查', 'desc' => '');
+$lang->misc->feature->all['11.5.1'][] = array('title'=>'新增第三方應用免密登錄禪道，修復Bug', 'desc' => '');
+
+$lang->misc->feature->all['11.5.stable'][] = array('title'=>'完善細節，修復Bug', 'desc' => '');
+$lang->misc->feature->all['11.5.stable'][] = array('title'=>'新增動態過濾機制', 'desc' => '');
+$lang->misc->feature->all['11.5.stable'][] = array('title'=>'整合新版本客戶端', 'desc' => '');
+
+$lang->misc->feature->all['11.4.1'][]      = array('title'=>'完善細節，修復Bug', 'desc' => '');
 
 $lang->misc->feature->all['11.4.stable'][] = array('title'=>'完善細節，修復Bug', 'desc' => '<p>增強測試任務管理</p><p>優化計劃、發佈、版本關聯需求和bug的交互</p><p>文檔庫可以自定義是否顯示子分類裡的文檔</p><p>修復bug，完善細節</p>');
 

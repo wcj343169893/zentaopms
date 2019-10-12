@@ -675,18 +675,18 @@ class bugModel extends model
                 if($data->types[$bugID]       == 'ditto') $data->types[$bugID]       = isset($prev['type'])       ? $prev['type']       : '';
                 if($data->severities[$bugID]  == 'ditto') $data->severities[$bugID]  = isset($prev['severity'])   ? $prev['severity']   : 3;
                 if($data->pris[$bugID]        == 'ditto') $data->pris[$bugID]        = isset($prev['pri'])        ? $prev['pri']        : 0;
-                if($data->branches[$bugID]    == 'ditto') $data->branches[$bugID]    = isset($prev['branch'])     ? $prev['branch'] : 0;
                 if($data->plans[$bugID]       == 'ditto') $data->plans[$bugID]       = isset($prev['plan'])       ? $prev['plan'] : '';
                 if($data->assignedTos[$bugID] == 'ditto') $data->assignedTos[$bugID] = isset($prev['assignedTo']) ? $prev['assignedTo'] : '';
                 if($data->resolvedBys[$bugID] == 'ditto') $data->resolvedBys[$bugID] = isset($prev['resolvedBy']) ? $prev['resolvedBy'] : '';
                 if($data->resolutions[$bugID] == 'ditto') $data->resolutions[$bugID] = isset($prev['resolution']) ? $prev['resolution'] : '';
                 if($data->os[$bugID]          == 'ditto') $data->os[$bugID]          = isset($prev['os'])         ? $prev['os'] : '';
                 if($data->browsers[$bugID]    == 'ditto') $data->browsers[$bugID]    = isset($prev['browser'])    ? $prev['browser'] : '';
+                if(isset($data->branches[$bugID]) and $data->branches[$bugID] == 'ditto') $data->branches[$bugID] = isset($prev['branch']) ? $prev['branch'] : 0;
 
                 $prev['type']       = $data->types[$bugID];
                 $prev['severity']   = $data->severities[$bugID];
                 $prev['pri']        = $data->pris[$bugID];
-                $prev['branch']     = $data->branches[$bugID];
+                $prev['branch']     = isset($data->branches[$bugID]) ? $data->branches[$bugID] : '';
                 $prev['plan']       = $data->plans[$bugID];
                 $prev['assignedTo'] = $data->assignedTos[$bugID];
                 $prev['resolvedBy'] = $data->resolvedBys[$bugID];
@@ -1378,7 +1378,8 @@ class bugModel extends model
      */
     public function getProjectBugs($projectID, $build = 0, $type = '', $param = 0, $orderBy = 'id_desc', $pager = null)
     {
-        if($type == 'bySearch')
+        $type = strtolower($type);
+        if($type == 'bysearch')
         {
             $queryID  = (int)$param;
             $products = $this->loadModel('project')->getProducts($projectID);
@@ -1414,6 +1415,7 @@ class bugModel extends model
             $bugs = $this->dao->select('*')->from(TABLE_BUG)
                 ->where('deleted')->eq(0)
                 ->beginIF(empty($build))->andWhere('project')->eq($projectID)->fi()
+                ->beginIF($type == 'unresolved')->andWhere('status')->eq('active')->fi()
                 ->beginIF($build)->andWhere("CONCAT(',', openedBuild, ',') like '%,$build,%'")->fi()
                 ->orderBy($orderBy)->page($pager)->fetchAll();
         }
@@ -1670,7 +1672,12 @@ class bugModel extends model
     {
         $datas = $this->dao->select('openedBuild as name, count(openedBuild) as value')->from(TABLE_BUG)->where($this->reportCondition())->groupBy('openedBuild')->orderBy('value DESC')->fetchAll('name');
         if(!$datas) return array();
-        $builds = $this->loadModel('build')->getProductBuildPairs($this->session->product, $branch = 0, $params = '');
+        /* Judge if all product or not. */
+        $products = $this->session->product;
+        preg_match('/`product` IN \((?P<productIdList>.+)\)/', $this->reportCondition(), $matchs);
+        if(!empty($matchs) and isset($matchs['productIdList'])) $products = str_replace('\'', '', $matchs['productIdList']);
+        $builds = $this->loadModel('build')->getProductBuildPairs($products, $branch = 0, $params = '');
+
         /* Deal with the situation that a bug maybe associate more than one openedBuild. */
         foreach($datas as $buildIDList => $data)
         {
@@ -1937,45 +1944,6 @@ class bugModel extends model
 
         /* 合并配置。*/
         foreach($commonOption->graph as $key => $value) if(!isset($chartOption->graph->$key)) $chartOption->graph->$key = $value;
-    }
-
-    /**
-     * Get bug templates of a user.
-     *
-     * @param  string    $account
-     * @access public
-     * @return array
-     */
-    public function getUserBugTemplates($account)
-    {
-        $templates = $this->dao->select('id,account,title,content,public')
-            ->from(TABLE_USERTPL)
-            ->where('type')->eq('bug')
-            ->andwhere('account', true)->eq($account)
-            ->orWhere('public')->eq('1')
-            ->markRight(1)
-            ->orderBy('id')
-            ->fetchAll();
-        return $templates;
-    }
-
-    /**
-     * Save user template.
-     *
-     * @access public
-     * @return void
-     */
-    public function saveUserBugTemplate()
-    {
-        $template = fixer::input('post')
-            ->setDefault('account', $this->app->user->account)
-            ->setDefault('type', 'bug')
-            ->stripTags('content', $this->config->allowedTags)
-            ->get();
-
-        $condition = "`type`='bug' and account='{$this->app->user->account}'";
-        $this->dao->insert(TABLE_USERTPL)->data($template)->batchCheck('title, content', 'notempty')->check('title', 'unique', $condition)->exec();
-        if(!dao::isError()) $this->loadModel('score')->create('bug', 'saveTplModal', $this->dao->lastInsertID());
     }
 
     /**
@@ -2475,7 +2443,11 @@ class bugModel extends model
             if($id == 'status')
             {
                 $class .= ' bug-' . $bug->status;
-                $title  = "title='" . zget($this->lang->bug->statusList, $bug->status) . "'";
+                $title  = "title='" . $this->processStatus('bug', $bug) . "'";
+            }
+            if($id == 'confirmed')
+            {
+                $class .= ' text-center';
             }
             if($id == 'title')
             {
@@ -2495,6 +2467,7 @@ class bugModel extends model
             if(strpos(',project,story,plan,task,openedBuild,', ",{$id},") !== false) $class .= ' text-ellipsis';
 
             echo "<td class='" . $class . "' $title>";
+            if(isset($this->config->bizVersion)) $this->loadModel('flow')->printFlowCell('bug', $bug, $id);
             switch($id)
             {
             case 'id':
@@ -2522,9 +2495,11 @@ class bugModel extends model
                 echo zget($this->lang->bug->priList, $bug->pri, $bug->pri);
                 echo "</span>";
                 break;
-            case 'title':
+            case 'confirmed':
                 $class = 'confirm' . $bug->confirmed;
-                echo "<span class='$class'>[{$this->lang->bug->confirmedList[$bug->confirmed]}]</span> ";
+                echo "<span class='$class'>" . zget($this->lang->bug->confirmedList, $bug->confirmed, $bug->confirmed) . "</span> ";
+                break;
+            case 'title':
                 if($bug->branch and isset($branches[$bug->branch]))    echo "<span class='label label-outline label-badge'>{$branches[$bug->branch]}</span> ";
                 if($bug->module and isset($modulePairs[$bug->module])) echo "<span class='label label-gray label-badge'>{$modulePairs[$bug->module]}</span> ";
                 echo $canView ? html::a($bugLink, $bug->title, null, "style='color: $bug->color'") : "<span style='color: $bug->color'>{$bug->title}</span>";
@@ -2557,7 +2532,7 @@ class bugModel extends model
                 break;
             case 'status':
                 echo "<span class='status-bug status-{$bug->status}'>";
-                echo zget($this->lang->bug->statusList, $bug->status);
+                echo $this->processStatus('bug', $bug);
                 echo  '</span>';
                 break;
             case 'activatedCount':

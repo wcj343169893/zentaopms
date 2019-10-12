@@ -1,6 +1,17 @@
 /**
  * Load project related builds
  * 
+ * @access public
+ * @return void
+ */
+function loadProductRelated()
+{
+    loadProjectBuilds(parseInt($('#project').val()));
+}
+
+/**
+ * Load project related builds
+ * 
  * @param  int    $projectID 
  * @access public
  * @return void
@@ -62,4 +73,5 @@ function suitEndDate()
 $(function()
 {
     adjustPriBoxWidth();
+    if($('#project').val()) loadProjectBuilds($('#project').val());
 });

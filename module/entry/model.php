@@ -83,6 +83,8 @@ class entryModel extends model
             ->remove('allIP')
             ->get();
 
+        if($this->post->freePasswd == 1) $this->config->entry->create->requiredFields = 'name, code, key';
+
         $this->dao->insert(TABLE_ENTRY)->data($entry)
             ->batchCheck($this->config->entry->create->requiredFields, 'notempty')
             ->check('code', 'code')
@@ -113,6 +115,8 @@ class entryModel extends model
             ->remove('allIP')
             ->get();
 
+        if($this->post->freePasswd == 1) $this->config->entry->edit->requiredFields = 'name, code, key';
+
         $this->dao->update(TABLE_ENTRY)->data($entry)
             ->batchCheck($this->config->entry->edit->requiredFields, 'notempty')
             ->check('code', 'code')
@@ -123,6 +127,20 @@ class entryModel extends model
         if(dao::isError()) return false;
 
         return common::createChanges($oldEntry, $entry);
+    }
+
+    /**
+     * Update called time.
+     * 
+     * @param  string $code 
+     * @param  int    $time 
+     * @access public
+     * @return bool
+     */
+    public function updateTime($code, $time)
+    {
+        $this->dao->update(TABLE_ENTRY)->set('calledTime')->eq($time)->where('code')->eq($code)->exec();
+        return !dao::isError();
     }
 
     /**

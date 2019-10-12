@@ -25,6 +25,11 @@
   <form class='load-indicator main-form' method='post' target='hiddenwin'>
     <table class='table table-form'>
       <tbody>
+        <tr class='hide'>
+          <th class='w-50px'><?php echo $lang->project->status;?></th>
+          <td><?php echo html::hidden('status', 'closed');?></td>
+        </tr>
+        <?php $this->printExtendFields($project, 'table');?>
         <tr>
           <th class='w-50px'><?php echo $lang->comment;?></th>
           <td><?php echo html::textarea('comment', '', "rows='6' class='form-control kindeditor' hidefocus='true'");?></td>

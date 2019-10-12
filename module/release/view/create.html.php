@@ -30,15 +30,21 @@
               </div>
               <?php if($lastRelease) echo '(' . $lang->release->last . ': ' . $lastRelease->name . ')';?>
             </td>
-          </tr> 
+          </tr>
           <tr>
             <th><?php echo $lang->release->build;?></th>
             <td><?php echo html::select('build', $builds, '', "class='form-control chosen'");?></td><td></td>
-          </tr>  
+          </tr>
           <tr>
             <th><?php echo $lang->release->date;?></th>
             <td><?php echo html::input('date', helper::today(), "class='form-control form-date' required");?></td><td></td>
-          </tr>  
+          </tr>
+          <tr class='hide'>
+            <th><?php echo $lang->release->status;?></th>
+            <td><?php echo html::hidden('status', 'normal', "disabled");?></td>
+            <td></td>
+          </tr>
+          <?php $this->printExtendFields('', 'table');?>
           <tr>
             <th><?php echo $lang->release->desc;?></th>
             <td colspan='2'><?php echo html::textarea('desc', '', "rows='10' class='form-control kindeditor' hidefocus='true'");?></td>
@@ -58,4 +64,10 @@
     </form>  
   </div>
 </div>
+<script>
+$(function()
+{
+    $(".form-date").datetimepicker('setEndDate', '<?php echo date(DT_DATE1)?>');
+});
+</script>
 <?php include '../../common/view/footer.html.php';?>

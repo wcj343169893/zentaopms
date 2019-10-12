@@ -11,6 +11,16 @@
  */
 class editor extends control
 {
+    public function __construct($moduleName = '', $methodName = '', $appName = '')
+    {
+        parent::__construct($moduleName, $methodName, $appName);
+
+        $remoteIp     = helper::getRemoteIp();
+        $this->active = ($remoteIp == '127.0.0.1' or $remoteIp == '::1');
+        $methodName   = $this->app->getMethodName();
+        if(!$this->active and $methodName != 'index' and $methodName != 'extend') die($this->display('editor', 'deny'));
+    }
+
     /**
      * Show module files and edit them. 
      * 
@@ -138,7 +148,7 @@ class editor extends control
         $statusFile = $this->loadModel('upgrade')->checkSafeFile();
         if($statusFile)
         {
-            die(js::alert(sprintf($this->lang->editor->noticeOkFile, $statusFile)));
+            die(js::alert(sprintf($this->lang->editor->noticeOkFile, str_replace('\\', '/', $statusFile))));
         }
         if($filePath and $_POST)
         {
@@ -172,4 +182,3 @@ class editor extends control
 
     }
 }
-

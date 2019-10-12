@@ -21,20 +21,25 @@ class chat extends control
      */
     public function serverStart()
     {
+        $this->chat->setXxdStartTime();
         $this->chat->resetUserStatus();
         $this->chat->createSystemChat();
+        $this->chat->updateLastPoll();
     }
 
     /**
      * Login.
      *
-     * @param  string $account
-     * @param  string $password encrypted password
-     * @param  string $status   online | away | busy
+     * @param  string               $account  user account
+     * @param  string               $password encrypted password
+     * @param  string|object|array  $options  use status name string 'online', 'away', 'busy' to set login status, or use an object to set more options, like {status: 'online', simple: false}
+     * @param  int                  $userID
+     * @param  string               $version
+     * @param  string               $device   desktop | mobile
      * @access public
      * @return void
      */
-    public function login($account = '', $password = '', $status = '', $userID = 0, $version = '')
+    public function login($account = '', $password = '', $options = array(), $userID = 0, $version = '', $device = 'desktop')
     {
         $user = $this->loadModel('user')->identify($account, $password);
         if(!$user)
@@ -44,6 +49,29 @@ class chat extends control
 
         if($user)
         {
+            if(empty($options))
+            {
+                $status = '';
+                $simple = false;
+            }
+            else if(is_string($options))
+            {
+                $status = $options;
+                $simple = false;
+            }
+            else
+            {
+                $status = property_exists($options, 'status') ? $options->status : '';
+                $simple = property_exists($options, 'simple') ? $options->simple : false;
+            }
+
+            if($user == 'locked' || $user == 'lockedPlus')
+            {
+                $this->output->result = 'fail';
+                $this->output->data   = $user;
+
+                die($this->app->encrypt($this->output));
+            }
             $this->output->result = 'success';
             if($status == 'online')
             {
@@ -53,21 +81,40 @@ class chat extends control
                 $data->clientLang   = $this->session->clientLang;
                 $user = $this->chat->editUser($data);
 
-                $this->loadModel('action')->create('user', $user->id, 'loginXuanxuan', '', 'xuanxuan-v' . (empty($version) ? '?' : $version), $user->account);
+                $this->loadModel('action')->create('user', $user->id, $simple ? 'reconnectXuanxuan' : 'loginXuanxuan', '', 'xuanxuan-v' . (empty($version) ? '?' : $version), $user->account);
 
                 $user->ranzhiUrl = commonModel::getSysURL();
                 $user->status    = $user->clientStatus;
 
                 $this->output->data = $user;
 
-                $userList = $this->chat->getUserListOutput($idList = array(), $user->id);
-                $chatList = $this->chat->getListOutput($user->id);
-                $messages = $this->chat->getOfflineMessagesOutput($user->id);
-                $notifies = $this->chat->getOfflineNotifyOutput($user->id);
+                $userList  = $this->chat->getUserListOutput($idList = array(), $user->id);
+                $chatList  = $this->chat->getListOutput($user->id);
+                $messages  = $this->chat->getOfflineMessagesOutput($user->id);
+                $notifies  = $this->chat->getOfflineNotifyOutput($user->id);
+                $histories = $this->chat->getHistoryOutput($user, $device);
+
+                $histories->data = array_merge(array_diff($histories->data, $messages->data));
 
                 $this->output = array($this->output, $userList, $chatList);
-                if(!empty($messages->data)) $this->output[] = $messages;
-                if(!empty($notifies->data)) $this->output[] = $notifies;
+                if(!empty($messages->data))  $this->output[] = $messages;
+                if(!empty($notifies->data))  $this->output[] = $notifies;
+                if(!empty($histories->data)) $this->output[] = $histories;
+            }
+            else
+            {
+                $result = $this->loadModel('client')->checkUpgrade($version);
+                $data   = array();
+                if($result !== false)
+                {
+                    $data = $result;
+                    if(version_compare($version, '2.4.0') === -1)
+                    {
+                        $this->output->result = 'fail';
+                        $this->output->data   = $this->lang->chat->errorXXCLow;
+                    }
+                }
+                $this->output->update = $data;
             }
         }
         else
@@ -86,17 +133,28 @@ class chat extends control
      * @access public
      * @return void
      */
-    public function logout($userID = 0)
+    public function logout($normal = false, $userID = 0)
     {
         $user = new stdclass();
         $user->id           = $userID;
         $user->clientStatus = 'offline';
 
+        $usersBeforeLogout = array_keys($this->chat->getUserList($status = 'online'));
+
+        if (!in_array($userID, $usersBeforeLogout))
+        {
+            $this->output->result = 'fail';
+            $this->output->users  = $this->chat->getUserList($status = 'online');
+            $this->output->data   = $this->chat->getUserByUserID($userID);
+
+            die($this->app->encrypt($this->output));
+        }
+
         $user  = $this->chat->editUser($user);
         $users = $this->chat->getUserList($status = 'online');
 
         $user->status = $user->clientStatus;
-        $this->loadModel('action')->create('user', $userID, 'logoutXuanxuan', '', 'xuanxuan', $user->account);
+        $this->loadModel('action')->create('user', $userID, $normal ? 'logoutXuanxuan' : 'disconnectXuanxuan', '', 'xuanxuan', $user->account);
 
         $this->output->result = 'success';
         $this->output->users  = array_keys($users);
@@ -148,7 +206,7 @@ class chat extends control
         }
         else
         {
-            $this->loadModel('action')->create('user', $userID, 'update');
+            $this->loadModel('action')->create('user', $userID, 'edited', '', 'xuanxuan', $user->account);
             $this->output->result = 'success';
             $this->output->users  = array_keys($users);
             $this->output->data   = $user;
@@ -767,7 +825,7 @@ class chat extends control
         else
         {
             $data = new stdclass();
-            $data->gids  = $gids;
+            $data->gids     = $gids;
             $data->category = $category;
 
             $this->output->result = 'success';
@@ -868,11 +926,30 @@ class chat extends control
         $newChat = false;
         $errors  = array();
         $message = current($messages);
-        $chat    = $this->chat->getByGID($message->cgid, true);
+
+        $members = explode('&', $message->cgid);
+        if(count($members) == 2)
+        {
+            if(!in_array($userID, $members))
+            {
+                $this->output->result  = 'fail';
+                $this->output->message = $this->lang->chat->notInChat;
+
+                die($this->app->encrypt($this->output));
+            }
+            if($message->user != $userID)
+            {
+                $this->output->result  = 'fail';
+                $this->output->message = $this->lang->chat->notSameUser;
+
+                die($this->app->encrypt($this->output));
+            }
+        }
+
+        $chat = $this->chat->getByGID($message->cgid, true);
         if(!$chat)
         {
-            $members = explode('&', $message->cgid);
-            if(count($members) == 2) $chat = $this->chat->create($message->cgid, '', 'one2one', $members, 0, false, $userID);
+            $chat = $this->chat->create($message->cgid, '', 'one2one', $members, 0, false, $userID);
             if(dao::isError())
             {
                 $error = new stdclass();
@@ -1057,7 +1134,7 @@ class chat extends control
     }
 
     /**
-     * Save or get settings.
+     * Upload or download settings.
      *
      * @param  string               $account
      * @param  string|array|object  $settings
@@ -1067,23 +1144,24 @@ class chat extends control
      */
     public function settings($account = '', $settings = '', $userID = 0)
     {
-        $this->loadModel('setting');
-
         $settingsObj  = new stdclass();
-        $userSettings = json_decode($this->setting->getItem("owner=system&module=chat&section=settings&key=$account"));
+        $userSettings = json_decode($this->loadModel('setting')->getItem("owner=system&module=chat&section=settings&key=$account"));
 
-        if(is_array($settings))
+        if(is_object($settings))
         {
-            foreach($settings as $settingKey) $settingsObj->$settingKey = isset($userSettings->$settingKey) ? $userSettings->$settingKey : '';
-        }
-        elseif(is_object($settings))
-        {
+            /* Upload settings. */
             $settingsObj = $settings;
-            foreach($settings as $settingKey => $settingValue) $userSettings->$settingKey = $settingValue;
+            foreach($settings as $key => $value) $userSettings->$key = $value;
             $this->setting->setItem("system.chat.settings.$account", helper::jsonEncode($userSettings));
+        }
+        elseif(is_array($settings))
+        {
+            /* Download the specified settings. */
+            foreach($settings as $key) $settingsObj->$key = zget($userSettings, $key, '');
         }
         else
         {
+            /* Download all settings. */
             $settingsObj = $userSettings;
         }
 
@@ -1125,25 +1203,8 @@ class chat extends control
             die($this->app->encrypt($this->output));
         }
 
-        $user      = $this->chat->getUserByUserID($userID);
-        $users     = $this->chat->getUserList($status = 'online', $chat->members);
-        $extension = $this->loadModel('file')->getExtension($fileName);
-
-        $file = new stdclass();
-        $file->pathname    = $path;
-        $file->title       = rtrim($fileName, ".$extension");
-        $file->extension   = $extension;
-        $file->size        = $size;
-        $file->objectType  = 'chat';
-        $file->objectID    = $chat->id;
-        $file->addedBy   = !empty($user->account) ? $user->account : '';
-        $file->addedDate = date(DT_DATETIME1, $time);
-
-        $this->dao->insert(TABLE_FILE)->data($file)->exec();
-
-        $fileID = $this->dao->lastInsertID();
-        $path  .= md5($fileName . $fileID . $time);
-        $this->dao->update(TABLE_FILE)->set('pathname')->eq($path)->where('id')->eq($fileID)->exec();
+        $users  = $this->chat->getUserList($status = 'online', $chat->members);
+        $fileID = $this->chat->uploadFile($fileName, $path, $size, $time, $userID, $users, $chat);
 
         if(dao::isError())
         {
@@ -1175,7 +1236,7 @@ class chat extends control
         if(dao::isError())
         {
             $this->output->result  = 'fail';
-            $this->output->message = "Get notify fail.";
+            $this->output->message = 'Get notify fail.';
         }
         else
         {
@@ -1231,7 +1292,7 @@ class chat extends control
                         }
                         else
                         {
-                            $this->loadModel('action')->create('todo', $todo->id, 'deleted');
+                            $this->loadModel('action')->create('todo', $todo->id, 'deleted', '', 'xuanxuan', $user->account);
 
                             $this->output->result = 'success';
                             $this->output->data   = $todo;
@@ -1249,7 +1310,7 @@ class chat extends control
                     }
                     else
                     {
-                        $actionID = $this->loadModel('action')->create('todo', $todo->id, 'edited', 'from xuanxuan.');
+                        $actionID = $this->loadModel('action')->create('todo', $todo->id, 'edited', '', 'xuanxuan', $user->account);
                         $this->action->logHistory($actionID, $changes);
 
                         $this->output->result = 'success';
@@ -1268,7 +1329,7 @@ class chat extends control
                 }
                 else
                 {
-                    $this->loadModel('action')->create('todo', $todoID, 'created');
+                    $this->loadModel('action')->create('todo', $todoID, 'created', '', 'xuanxuan', $user->account);
                     $todo->id = $todoID;
 
                     $this->output->result = 'success';
@@ -1286,10 +1347,11 @@ class chat extends control
     }
 
     /**
-     * Get todoes list
+     * Get todo list.
      *
      * @param  string $mode
      * @param  string $orderBy
+     * @param  string $status
      * @param  int    $recTotal
      * @param  int    $recPerPage
      * @param  int    $pageID
@@ -1334,6 +1396,8 @@ class chat extends control
      */
     public function checkUserChange()
     {
+        $this->chat->updateLastPoll();
+
         $this->output->result = 'success';
         $this->output->data   = $this->chat->checkUserChange();
         die($this->app->encrypt($this->output));
@@ -1407,64 +1471,6 @@ class chat extends control
     }
 
     /**
-     * Debug xuanxuan.
-     *
-     * @access public
-     * @return void
-     */
-    public function debug()
-    {
-        if(RUN_MODE != 'front') die('Access Denied');
-
-        $this->lang->menuGroups->chat = 'system';
-        $this->lang->chat->menu       = $this->lang->system->menu;
-        $this->lang->chat->menuOrder  = $this->lang->system->menuOrder;
-
-        $this->view->title = $this->lang->chat->debug;
-        $this->display();
-    }
-
-    /**
-     * Read content of log file and display.
-     *
-     * @access public
-     * @return void
-     */
-    public function showLog()
-    {
-        $logFile = $this->app->getLogRoot() . 'xuanxuan.log.php';
-        if(!file_exists($logFile)) $this->send(array('result' => 'fail', 'message' => $this->lang->chat->noLogFile));
-
-        if(!function_exists('fopen')) $this->send(array('result' => 'fail', 'message' => $this->lang->chat->noFopen));
-
-        $line = $this->config->chat->logLine;
-        $pos  = -2;
-        $eof  = '';
-        $log  = '';
-        $fp   = fopen($logFile, 'r');
-        while($line > 0)
-        {
-            while($eof != "\n")
-            {
-                if(!fseek($fp, $pos, SEEK_END))
-                {
-                    $eof = fgetc($fp);
-                    $pos--;
-                }
-                else
-                {
-                    break;
-                }
-            }
-            $log .= fgets($fp) . '<br>';
-            $eof  = '';
-            $line--;
-        }
-
-        $this->send(array('result' => 'success', 'logs' => $log));
-    }
-
-    /**
      * Message notification api.
      *
      * @access public
@@ -1526,5 +1532,100 @@ class chat extends control
         }
 
         die(json_encode($response));
+    }
+
+    /**
+     * Debug xuanxuan.
+     *
+     * @access public
+     * @return void
+     */
+    public function debug($source = 'x_php')
+    {
+        if(RUN_MODE != 'front') die('Access Denied');
+
+        $this->view->title          = $this->lang->chat->debug;
+        $this->view->source         = $source;
+        $this->view->xxdStatus      = $this->chat->getXxdStatus();
+        $this->view->checkXXBConfig = $this->chat->checkXXBConfig();
+        $this->display();
+    }
+
+    /**
+     * Read content of log file and display.
+     *
+     * @access public
+     * @return void
+     */
+    public function showLog()
+    {
+        $logFile = $this->app->getLogRoot() . 'xuanxuan.' . date('Ymd') . '.log.php';
+        if(!file_exists($logFile)) $this->send(array('result' => 'fail', 'message' => $this->lang->chat->noLogFile));
+
+        if(!function_exists('fopen')) $this->send(array('result' => 'fail', 'message' => $this->lang->chat->noFopen));
+
+        $line = $this->config->chat->logLine;
+        $pos  = -2;
+        $eof  = '';
+        $log  = '';
+        $fp   = fopen($logFile, 'r');
+        while($line > 0)
+        {
+            while($eof != "\n")
+            {
+                if(!fseek($fp, $pos, SEEK_END))
+                {
+                    $eof = fgetc($fp);
+                    $pos--;
+                }
+                else
+                {
+                    break;
+                }
+            }
+            $log .= fgets($fp) . '<br>';
+            $eof  = '';
+            $line--;
+        }
+
+        $this->send(array('result' => 'success', 'logs' => $log));
+    }
+
+    /**
+     * Update last polling time record.
+     *
+     * @access public
+     * @return void
+     */
+    public function updateLastPoll()
+    {
+        $this->chat->updateLastPoll();
+
+        $this->output->result = 'success';
+        die($this->app->encrypt($this->output));
+    }
+
+    /**
+     * Donwload XXD package.
+     *
+     * @param  string xxd package name.
+     * @access public
+     * @return void
+     */
+    public function downloadXxdPackage($xxdFileName)
+    {
+        set_time_limit(0);
+        $version      = $this->config->xuanxuan->version;
+        $xxdDirectory = $this->app->tmpRoot . 'xxd' . DS . $version;
+        $xxdFile      = fopen($xxdDirectory . DS . $xxdFileName, 'rb');
+
+        Header("Content-type: application/octet-stream");
+        Header("Accept-Ranges: bytes");
+        Header("Accept-Length: " . filesize ($xxdDirectory . DS . $xxdFileName));
+        Header("Content-Disposition: attachment; filename=" . $xxdFileName);
+
+        echo fread($xxdFile, filesize($xxdDirectory . DS . $xxdFileName));
+        fclose($xxdFile);
+        die();
     }
 }

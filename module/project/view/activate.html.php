@@ -49,6 +49,11 @@
           </div>
         </td>
       </tr>
+      <tr class='hide'>
+        <th><?php echo $lang->project->status;?></th>
+        <td><?php echo html::hidden('status', 'doing');?></td>
+      </tr>
+      <?php $this->printExtendFields($project, 'table', 'columns=5');?>
       <tr>
         <th><?php echo $lang->comment;?></th>
         <td colspan='5'><?php echo html::textarea('comment', '', "rows='6' class='form-control kindeditor' hidefocus='true'");?></td>

@@ -36,6 +36,8 @@ $lang->install->links = <<<EOT
 新浪微博：<a href='http://weibo.com/easysoft' target='_blank'>http://weibo.com/easysoft</a>
 
 
+
+
 您現在正在安裝的版本是 <strong class='text-danger'>%s</strong>。
 EOT;
 
@@ -82,7 +84,7 @@ $lang->install->iconvFail    = '修改PHP配置檔案，加載ICONV擴展。';
 $lang->install->tmpRoot      = '臨時檔案目錄';
 $lang->install->dataRoot     = '上傳檔案目錄';
 $lang->install->session      = 'Session存儲目錄';
-$lang->install->sessionFail  = '修改PHP配置檔案，設置session.save_path';
+$lang->install->sessionFail  = '修改PHP配置檔案，設置session.save_path。<br />如果使用寶塔面板，可以到寶塔Web面板中“軟件商店”，打開PHP設置，到“Session配置”項，選擇files，點擊保存。老版本需要修改php配置檔案。';
 $lang->install->mkdirWin     = '<p>需要創建目錄%s。命令為：<br /> mkdir %s</p>';
 $lang->install->chmodWin     = '需要修改目錄 "%s" 的權限。';
 $lang->install->mkdirLinux   = '<p>需要創建目錄%s。<br /> 命令為：<br /> mkdir -p %s</p>';
@@ -93,6 +95,7 @@ $lang->install->defaultLang    = '預設語言';
 $lang->install->dbHost         = '資料庫伺服器';
 $lang->install->dbHostNote     = '如果127.0.0.1無法訪問，嘗試使用localhost';
 $lang->install->dbPort         = '伺服器連接埠';
+$lang->install->dbEncoding     = '資料庫編碼';
 $lang->install->dbUser         = '資料庫用戶名';
 $lang->install->dbPassword     = '資料庫密碼';
 $lang->install->dbName         = 'PMS使用的庫';
@@ -172,14 +175,14 @@ $lang->install->joinZentao = <<<EOT
 <p>您已經成功安裝禪道管理系統%s，<strong class='text-danger'>請及時刪除install.php</strong>。</p><p>友情提示：為了您及時獲得禪道的最新動態，請在禪道社區(<a href='https://www.zentao.net' class='alert-link' target='_blank'>www.zentao.net</a>)進行登記。</p>
 EOT;
 
-$lang->install->product = array('chanzhi', 'ranzhi', 'xuanxuan');
+$lang->install->product = array('chanzhi', 'ranzhi', 'xuanxuan', 'ydisk', 'meshiot');
 
-$lang->install->promotion     = "為您推薦易軟天創旗下其他產品：";
-$lang->install->chanzhi       = new stdclass();
-$lang->install->chanzhi->name = '蟬知企業門戶系統';
-$lang->install->chanzhi->logo = 'images/main/chanzhi.png';
-$lang->install->chanzhi->url  = 'http://www.chanzhi.org';
-$lang->install->chanzhi->desc = <<<EOD
+$lang->install->promotion      = "為您推薦易軟天創旗下其他產品：";
+$lang->install->chanzhi        = new stdclass();
+$lang->install->chanzhi->name  = '蟬知門戶';
+$lang->install->chanzhi->logo  = 'images/main/chanzhi.ico';
+$lang->install->chanzhi->url   = 'http://www.chanzhi.org';
+$lang->install->chanzhi->desc  = <<<EOD
 <ul>
   <li>專業的企業營銷門戶系統</li>
   <li>功能豐富，操作簡潔方便</li>
@@ -189,10 +192,10 @@ $lang->install->chanzhi->desc = <<<EOD
 EOD;
 
 $lang->install->ranzhi = new stdclass();
-$lang->install->ranzhi->name = '然之協同管理系統';
-$lang->install->ranzhi->logo = 'images/main/ranzhi.png';
-$lang->install->ranzhi->url  = 'http://www.ranzhi.org';
-$lang->install->ranzhi->desc = <<<EOD
+$lang->install->ranzhi->name  = '然之協同';
+$lang->install->ranzhi->logo  = 'images/main/ranzhi.ico';
+$lang->install->ranzhi->url   = 'http://www.ranzhi.org';
+$lang->install->ranzhi->desc  = <<<EOD
 <ul>
   <li>客戶管理，訂單跟蹤</li>
   <li>項目任務，公告文檔</li>
@@ -201,26 +204,41 @@ $lang->install->ranzhi->desc = <<<EOD
 </ul>
 EOD;
 
-$lang->install->zdoo = new stdclass();
-$lang->install->zdoo->name = '可深度定製的雲端一體化協作平台';
-$lang->install->zdoo->desc = <<<EOD
-<ul>
-  <li>安全、穩定、高效</li>
-  <li>以容器為交付單位</li>
-  <li>租戶隔離，可深度定製</li>
-  <li>提供一體化管理平台</li>
-</ul>
-EOD;
-
 $lang->install->xuanxuan = new stdclass();
-$lang->install->xuanxuan->name = '喧喧即時聊天軟件';
-$lang->install->xuanxuan->logo = 'images/main/xuanxuan.png';
-$lang->install->xuanxuan->url  = 'http://www.xuan.im';
-$lang->install->xuanxuan->desc = <<<EOD
+$lang->install->xuanxuan->name  = '喧喧聊天';
+$lang->install->xuanxuan->logo  = 'images/main/xuanxuan.ico';
+$lang->install->xuanxuan->url   = 'http://www.xuan.im';
+$lang->install->xuanxuan->desc  = <<<EOD
 <ul>
   <li>輕：輕量級架構，容易部署</li>
   <li>跨：真正完整跨平台解決方案</li>
   <li>美：基于Html5開發，界面美觀</li>
   <li>開：開放架構，方便二開整合</li>
+</ul>
+EOD;
+
+$lang->install->ydisk = new stdclass();
+$lang->install->ydisk->name  = '悅庫網盤';
+$lang->install->ydisk->logo  = 'images/main/ydisk.ico';
+$lang->install->ydisk->url   = 'http://www.ydisk.cn';
+$lang->install->ydisk->desc  = <<<EOD
+<ul>
+  <li>絶對私有，只部署在自己的機器上。</li>
+  <li>海量存儲，只取決於您的硬碟大小。</li>
+  <li>極限傳輸，只取決於您的網絡頻寬。</li>
+  <li>極度安全，十二種權限組合。</li>
+</ul>
+EOD;
+
+$lang->install->meshiot = new stdclass();
+$lang->install->meshiot->name  = '易天物聯';
+$lang->install->meshiot->logo  = 'images/main/meshiot.ico';
+$lang->install->meshiot->url   = 'https://www.meshiot.com';
+$lang->install->meshiot->desc  = <<<EOD
+<ul>
+  <li>超性能網關，一個就可管65536個設備。</li>
+  <li>獨創無線電通訊協議，2500米穿牆無障礙。</li>
+  <li>200餘款感測器控製器，獨創調光系統。</li>
+  <li>可配電池，對既有場地設備無任何要求。</li>
 </ul>
 EOD;

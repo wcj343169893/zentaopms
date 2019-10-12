@@ -54,11 +54,16 @@
           </td>
           <td>
             <div class="checkbox-primary affair">
-              <input type="checkbox" name="multiple" value="1" id="multipleBox"><label for="multipleBox" class="no-margin"><?php echo $lang->task->multipleAB;?></label>
+              <input type="checkbox" name="multiple" value="1" id="multipleBox"><label for="multipleBox" class="no-margin"><?php echo $lang->task->multiple;?></label>
             </div>
             <button id='selectAllUser' type="button" class="btn btn-link<?php if($task->type !== 'affair') echo ' hidden';?>"><?php echo $lang->task->selectAllUser;?></button>
           </td>
         </tr>
+        <tr class='hide'>
+          <th><?php echo $lang->task->status;?></th>
+          <td><?php echo html::hidden('status', 'wait');?></td>
+        </tr>
+        <?php $this->printExtendFields('', 'table');?>
         <?php if(strpos(",$showFields,", ',story,') !== false and $config->global->flow != 'onlyTask' and $project->type != 'ops'):?>
         <tr>
           <th><?php echo $lang->task->story;?></th>
@@ -200,7 +205,10 @@
         </tr>
         <tr>
           <th><?php echo $lang->task->desc;?></th>
-          <td colspan='3'><?php echo html::textarea('desc', $task->desc, "rows='10' class='form-control'");?></td>
+          <td colspan='3'>
+            <?php echo $this->fetch('user', 'ajaxPrintTemplates', 'type=task&link=desc');?>
+            <?php echo html::textarea('desc', $task->desc, "rows='10' class='form-control'");?>
+          </td>
         </tr>
         <tr>
           <th><?php echo $lang->files;?></th>

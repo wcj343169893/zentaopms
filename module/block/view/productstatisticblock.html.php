@@ -24,9 +24,9 @@
 .product-info .progress {position: absolute; left: 10px; top: 35px; right: 90px;}
 .product-info .progress-info {position: absolute; left: 8px; top: 10px; width: 180px; font-size: 12px;}
 .product-info .type-info {color: #A6AAB8; text-align: center; position: absolute; right: 0; top: 6px; width: 100px;}
-html[lang="en"] .product-info .type-info {color: #A6AAB8; text-align: center; position: absolute; right: 0; top: 6px; width: 130px;}
+html[lang="en"] .product-info .type-info {color: #A6AAB8; text-align: center; position: absolute; right: 0; top: 6px; width: 90px;}
 .product-info .type-value,
-.product-info .type-label {font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+.product-info .type-label {font-size: 12px; overflow: visible; text-overflow: ellipsis; white-space: nowrap;}
 .product-info .type-value {font-size: 14px;}
 .product-info .type-value > strong {font-size: 20px; color: #3C4353;}
 .product-info .actions {position: absolute; left: 10px; top: 14px;}
@@ -117,7 +117,7 @@ $(function()
               <div class="tile-title"><?php echo $lang->story->total;?></div>
               <?php if($product->stories):?>
               <div class="tile-amount"><?php echo array_sum($product->stories);?></div>
-              <?php common::printLink('product', 'browse', "productID={$product->id}", $lang->story->viewAll . '<span class="label label-badge label-icon"><i class="icon icon-arrow-right"></i></span>', '', 'class="btn btn-primary btn-circle btn-icon-right btn-sm"');?>
+              <?php common::printLink('product', 'browse', "productID={$product->id}&branch=&type=allstory", $lang->story->viewAll . '<span class="label label-badge label-icon"><i class="icon icon-arrow-right"></i></span>', '', 'class="btn btn-primary btn-circle btn-icon-right btn-sm"');?>
               <?php else:?>
               <div class="tile-amount">0</div>
               <?php common::printLink('story', 'create', "productID={$product->id}", '<span class="label label-badge label-icon"><i class="icon icon-plus"></i></span>' . $lang->story->create, '', 'class="btn btn-primary btn-circle btn-icon-left btn-sm"');?>
@@ -135,7 +135,7 @@ $(function()
             </ul>
           </div>
           <?php if($product->stories):?>
-          <div class="col-6">
+          <div class="col-5">
             <div class="product-info">
               <?php $totalPlan     = $product->plans ? array_sum($product->plans) : 0;?>
               <?php $unexpiredPlan = $product->plans ? zget($product->plans, 'unexpired', 0) : 0;?>
@@ -155,11 +155,11 @@ $(function()
                   <table class='status-count'>
                     <tr>
                       <td class='text-right'><?php echo $lang->productplan->all;?> :</td>
-                      <td class='text-left'><?php echo $totalPlan;?></td>
+                      <td class='text-left'><?php echo empty($totalPlan) ? 0 : html::a($this->createLink('productplan', 'browse', "productID={$product->id}&branch=0&browseType=all"), $totalPlan);?></td>
                     </tr>
                     <tr>
                       <td class='text-right'><?php echo $lang->productplan->featureBar['browse']['unexpired'];?> :</td>
-                      <td class='text-left'><?php echo $unexpiredPlan;?></td>
+                      <td class='text-left'><?php echo empty($unexpiredPlan) ? 0 : html::a($this->createLink('productplan', 'browse', "productID={$product->id}&branch=0&browseType=unexpired"), $unexpiredPlan);?></td>
                     </tr>
                   </table>
                 </div>
@@ -167,9 +167,9 @@ $(function()
             </div>
             <div class="product-info">
               <?php $totalProject = $product->projects ? zget($product->projects, 'all', 0) : 0;?>
-              <?php $doingProject = $product->projects ? zget($product->projects, 'doing', 0) : 0;?>
+              <?php $undoneProject = $product->projects ? zget($product->projects, 'undone', 0) : 0;?>
               <?php $delayProject = $product->projects ? zget($product->projects, 'delay', 0) : 0;?>
-              <?php $doingRate    = $totalProject ? round($doingProject / $totalProject * 100, 2) : 0;?>
+              <?php $undoneRate    = $totalProject ? round($undoneProject / $totalProject * 100, 2) : 0;?>
               <?php if($totalProject):?>
               <div class="progress-info">
                 <?php if($delayProject):?>
@@ -177,7 +177,7 @@ $(function()
                 <?php endif;?>
               </div>
               <div class="progress">
-                <div class="progress-bar" role="progressbar" aria-valuenow="<?php echo $doingRate;?>" aria-valuemin="0" aria-valuemax="100" style="width: <?php echo $doingRate;?>%"></div>
+                <div class="progress-bar" role="progressbar" aria-valuenow="<?php echo $undoneRate;?>" aria-valuemin="0" aria-valuemax="100" style="width: <?php echo $undoneRate;?>%"></div>
               </div>
               <?php else:?>
               <div class="actions">
@@ -189,11 +189,11 @@ $(function()
                   <table class='status-count'>
                     <tr>
                       <td class='text-right'><?php echo $lang->project->allProjects;?> :</td>
-                      <td class='text-left'><?php echo $totalProject;?></td>
+                      <td class='text-left'><?php echo empty($totalProject) ? 0 : html::a($this->createLink('product', 'project', "type=all&product={$product->id}"), $totalProject);?></td>
                     </tr>
                     <tr>
                       <td class='text-right'><?php echo $lang->project->statusList['doing'];?> :</td>
-                      <td class='text-left'><?php echo $doingProject;?></td>
+                      <td class='text-left'><?php echo empty($undoneProject) ? 0 : html::a($this->createLink('product', 'project', "type=undone&product={$product->id}"), $undoneProject);?></td>
                     </tr>
                   </table>
                 </div>
@@ -222,11 +222,11 @@ $(function()
                   <table class='status-count'>
                     <tr>
                       <td class='text-right'><?php echo $lang->product->allRelease;?> :</td>
-                      <td class='text-left'><?php echo $totalRelease;?></td>
+                      <td class='text-left'><?php echo empty($totalRelease) ? 0 : html::a($this->createLink('release', 'browse', "productID={$product->id}&branch=0&type=all"), $totalRelease);?></td>
                     </tr>
                     <tr>
                       <td class='text-right'><?php echo $lang->product->maintain;?> :</td>
-                      <td class='text-left'><?php echo $normalRelease;?></td>
+                      <td class='text-left'><?php echo empty($normalRelease) ? 0 : html::a($this->createLink('release', 'browse', "productID={$product->id}&branch=0&type=normal"), $normalRelease);?></td>
                     </tr>
                   </table>
                 </div>

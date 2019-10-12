@@ -124,11 +124,7 @@ class cron extends control
         $this->dao->delete()->from(TABLE_CRON)->where('id')->eq($cronID)->exec();
         die(js::reload('parent'));
     }
-    /**
-     * snoopy客户端
-     * @var Snoopy
-     */
-    var $agent=false;
+
     /**
      * Ajax exec cron.
      * 
@@ -213,46 +209,11 @@ class cron extends control
                             exec($cron['command'], $output, $return);
                             if($output) $output = join("\n", $output);
                         }
-                        elseif(isset($crons[$id]) and $crons[$id]->type == 'get')
-                        {
-                            //新增get请求
-                            if(!$this->agent){
-                                //只有当全局变量没初始化，才loadClass
-                                $this->agent = $this->app->loadClass('snoopy');
-                            }
-                            //get方式获得网站内容
-                            $return = $this->agent->fetch($cron['command']);
-                            //请求成功
-                            if($return){
-                                //获取返回值
-                                $output = $this->agent->results;
-                            }else{
-                                $output="get 访问失败";
-                            }
-                        }
-                        elseif(isset($crons[$id]) and $crons[$id]->type == 'post')
-                        {
-                            //新增post请求
-                            if(!$this->agent){
-                                //只有当全局变量没初始化，才loadClass
-                                $this->agent = $this->app->loadClass('snoopy');
-                            }
-                            //post方式获得网站内容
-                            $return = $this->agent->submit($cron['command'],$cron['data']);
-                            //请求成功
-                            if($return){
-                                //获取返回值
-                                $output = $this->agent->results;
-                            }else{
-                                $output="post 访问失败";
-                            }
-                        }
 
                         /* Save log. */
                         $log  = '';
                         $time = $now->format('G:i:s');
-                        //$log  = "$time task " .  $id . " executed,\ncommand: $cron[command].\nreturn : $return.\noutput : $output\n";
-                        $log  = sprintf("%s task %d executed,\ncommand : %s\nreturn : %s\noutput : %s\n",$time,$id,$cron['command'],$return,$output);
+                        $log  = "$time task " .  $id . " executed,\ncommand: $cron[command].\nreturn : $return.\noutput : $output\n";
                         $this->cron->logCron($log);
                         unset($log);
                     }

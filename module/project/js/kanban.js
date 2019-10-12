@@ -38,27 +38,6 @@ $(function()
     $.cookie('selfClose', 0, {expires:config.cookieLife, path:config.webRoot});
     var $kanban = $('#kanban');
 
-    var statusMap =
-    {
-        task:
-        {
-            wait   : {doing: 'start', done: 'finish', cancel: 'cancel'},
-            doing  : {done: 'finish', pause: 'pause'},
-            pause  : {doing: 'activate', done: 'finish', cancel: 'cancel'},
-            done   : {doing: 'activate', closed: 'close'},
-            cancel : {doing: 'activate', closed: 'close'},
-            closed : {doing: 'activate'}
-        },
-        bug:
-        {
-            wait   : {done: 'resolve', cancel: 'resolve'},
-            doing  : {},
-            done   : {wait: 'activate', closed: 'close'},
-            cancel : {wait: 'activate', closed: 'close'},
-            closed : {wait: 'activate'}
-        }
-    };
-
     // Get scrollbar width
     var getScrollbarWidth = function ()
     {
@@ -128,14 +107,33 @@ $(function()
     {
         if(statusMap[type][from] && statusMap[type][from][to])
         {
-            kanbanModalTrigger.show(
+            var method = statusMap[type][from][to];
+            var link   = $.createLink(type, method, 'id=' + id + '&subStatus=' + to);
+            if(method == 'ajaxChangeSubStatus')
             {
-                url: $.createLink(type, statusMap[type][from][to], 'id=' + id) + onlybody,
-                shown:  function(){$('.modal-iframe').addClass('with-titlebar').data('cancel-reload', true)},
-                hidden: refresh
-            });
+                $.getJSON(link, function(response)
+                {
+                    if(response.result == 'fail' && response.message)
+                    {
+                        bootAlert(response.message);
+                        setTimeout(function(){location.reload();}, 1000);
+                    }
+                });
+            }
+            else
+            {
+                kanbanModalTrigger.show(
+                {
+                    url: link + onlybody,
+                    shown:  function(){$('.modal-iframe').addClass('with-titlebar').data('cancel-reload', true)},
+                    width: 900,
+                    hidden: refresh
+                });
+            }
         }
-        return false;
+        
+        /* Keep the draged element stay in the new place. */
+        return true;
     };
 
     $kanban.droppable(
@@ -162,7 +160,7 @@ $(function()
         },
         drag: function(e)
         {
-            var $item = $(e.element);
+            var $item   = $(e.element);
             var $target = $(e.target);
             var $holder = $target.find('.board-drag-holder');
             if (!$holder.length) $holder = $('<div class="board-drag-holder"></div>').appendTo($target);
@@ -194,6 +192,61 @@ $(function()
             shown:  function(){$('.modal-iframe').addClass('with-titlebar').data('cancel-reload', true)},
             hidden: refresh
         });
-		return false;
+        return false;
     });
+
+    fixKanbanSide($kanban);
 });
+
+function fixKanbanSide($kanban)
+{
+    if($kanban.length == 0) return false;
+
+    fixSideInit();
+    $kanban.scroll(fixSide);//Fix kanban side when scrolling.
+
+    var tableWidth, kanbanOffset, fixedSide, $fixedSide;
+    function fixSide()
+    {
+        kanbanOffset = $kanban.offset().left;
+        $fixedSide   = $kanban.parent().find('.fixedSide');
+        if($fixedSide.length <= 0 && kanbanOffset < $kanban.scrollLeft())
+        {
+            var $th = $kanban.find('table thead tr th:first');
+
+            tableWidth = $th.width();
+
+            fixedSide  = "<table class='table table-bordered fixedSide'><thead><tr><th class='c-board c-side has-btn'>" + $th.html()+ '</th></tr></thead><tbody>';
+            $kanban.find('table tbody tr').each(function()
+            {
+                var $td = $(this).find('td:first');
+                fixedSide = fixedSide + "<tr><td class='c-side text-left'>" + $td.html() + '</td></tr>';
+            });
+            fixedSide = fixedSide + '</tbody></table>';
+
+            $kanban.before(fixedSide);
+
+            $('.fixedSide').width(tableWidth);
+            $('.fixedSide').css('top', $kanban.offset());
+
+            /* Reset height. */
+            var index = 1;
+            $('.fixedSide tbody tr').each(function()
+            {
+                var $td = $kanban.find('table tbody tr:nth-child(' + index + ') td:first');
+
+                if($(this).find('td:first div:first').length == 0) $(this).find('td:first').html('<div></div>');
+                $(this).find('td:first div:first').height($td.height());
+
+                index++;
+            })
+        }
+        if($fixedSide.length > 0 && kanbanOffset >= $kanban.scrollLeft()) $fixedSide.remove();
+    }
+    function fixSideInit()
+    {
+        $fixedSide = $kanban.parent().find('.fixedSide');
+        if($fixedSide.length > 0) $fixedSide.remove();
+        fixSide();
+    }
+}

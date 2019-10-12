@@ -12,7 +12,10 @@
 <?php include '../../common/view/header.html.php';?>
 <div id="mainMenu" class="clearfix">
   <div class="btn-toolbar pull-left">
-    <span class='btn btn-link btn-active-text'><span class='text'><?php echo $lang->product->project;?></span></span>
+    <?php foreach($lang->project->featureBar['all'] as $key => $label):?>
+    <?php echo html::a(inlink("project", "status=$key&productID=$productID"), "<span class='text'>{$label}</span>" . ($status == $key ? " <span class='label label-light label-badge'>" . count($projectStats) . "</span>" : ''), '', "class='btn btn-link" . ($status == $key ? ' btn-active-text' : '') . "' id='{$key}Tab'");?>
+    <?php endforeach;?>
+    <span class="label label-info projectInfo"><?php echo $lang->product->projectInfo;?></span>
   </div>
 </div>
 <div id="mainContent">
@@ -21,7 +24,6 @@
     <p>
       <span class="text-muted"><?php echo $lang->project->noProject;?></span>
       <?php if(common::hasPriv('project', 'create')):?>
-      <span class="text-muted"><?php echo $lang->youCould;?></span>
       <?php echo html::a($this->createLink('project', 'create'), "<i class='icon icon-plus'></i> " . $lang->project->create, '', "class='btn btn-info'");?>
       <?php endif;?>
     </p>
@@ -31,11 +33,11 @@
     <table class="table table-fixed">
       <thead>
         <tr>
-          <th><?php echo $lang->project->name;?></th>
+          <th><?php echo $lang->projectCommon;?></th>
           <th class='w-100px'><?php echo $lang->project->code;?></th>
           <th class='w-120px'><?php echo $lang->project->end;?></th>
           <th class='w-80px'><?php echo $lang->project->status;?></th>
-          <th class='w-50px'><?php echo $lang->project->totalEstimate;?></th>
+          <th class='w-80px'><?php echo $lang->project->totalEstimate;?></th>
           <th class='w-50px'><?php echo $lang->project->totalConsumed;?></th>
           <th class='w-50px'><?php echo $lang->project->totalLeft;?></th>
           <th class='w-150px'><?php echo $lang->project->progress;?></th>
@@ -54,8 +56,9 @@
             <span class="status-project status-delayed"><?php echo $lang->project->delayed;?></span>
           </td>
           <?php else:?>
-          <td class='c-status' title='<?php echo zget($lang->project->statusList, $project->status);?>'>
-            <span class="status-project status-<?php echo $project->status?>"><?php echo zget($lang->project->statusList, $project->status);?></span>
+          <?php $status = $this->processStatus('project', $project);?>
+          <td class='c-status' title='<?php echo $status;?>'>
+            <span class="status-project status-<?php echo $project->status?>"><?php echo $status;?></span>
           </td>
           <?php endif;?>
           <td><?php echo $project->hours->totalEstimate;?></td>

@@ -11,6 +11,7 @@
  */
 ?>
 <?php include '../../common/view/header.html.php';?>
+<?php include '../../common/view/kindeditor.html.php';?>
   <div id='mainContent' class="main-row">
     <div class="col-8 main-col">
       <div class="row">
@@ -132,15 +133,17 @@
                 <?php $i++;?>
                 <?php endforeach;?>
                 <div class="col-xs-6">
-                  <?php common::printLink('doc', 'createLib', "type=project&objectID=$project->id", "<i class='icon icon-plus hl-primary text-primary'></i> &nbsp;" . $lang->doc->createLib, '', "class='text-muted iframe'");?>
+                  <?php common::printLink('doc', 'createLib', "type=project&objectID=$project->id", "<i class='icon icon-plus hl-primary text-primary'></i> &nbsp;" . $lang->doc->createLib, '', "class='text-muted iframe' data-width='1000px'");?>
                 </div>
                 <?php endif;?>
               </div>
             </div>
           </div>
         </div>
+        <?php $this->printExtendFields($project, 'div', "position=left&inForm=0");?>
         <div class="col-sm-12">
           <?php $blockHistory = true;?>
+          <?php $actionFormLink = $this->createLink('action', 'comment', "objectType=project&objectID=$project->id");?>
           <?php include '../../common/view/action.html.php';?>
         </div>
       </div>
@@ -158,6 +161,8 @@
               common::printIcon('project', 'putoff',   "projectID=$project->id", $project, 'button', '', '', 'iframe', true);
               common::printIcon('project', 'suspend',  "projectID=$project->id", $project, 'button', '', '', 'iframe', true);
               common::printIcon('project', 'close',    "projectID=$project->id", $project, 'button', '', '', 'iframe', true);
+
+              echo $this->buildOperateMenu($project, 'view');
 
               echo "<div class='divider'></div>";
               common::printIcon('project', 'edit', $params, $project);
@@ -183,7 +188,7 @@
                   <?php if(isset($project->delay)):?>
                   <span class="label label-danger label-outline"><?php echo $lang->project->delayed;?></span>
                   <?php else:?>
-                  <span class="label label-success label-outline"><?php echo zget($lang->project->statusList, $project->status);?></span>
+                  <span class="label label-success label-outline"><?php echo $this->processStatus('project', $project);?></span>
                   <?php endif;?>
                 </p>
               </div>
@@ -223,10 +228,11 @@
               <div class="detail-content">
                 <table class='table table-data data-stats'>
                   <tbody>
+                    <tr class='statsTr'><td class='w-100px'></td><td></td><td></td><td></td></tr>
                     <tr>
-                      <td colspan="2">
+                      <td colspan="4">
                         <?php $progress = ($project->totalConsumed + $project->totalLeft) ? round($project->totalConsumed / ($project->totalConsumed + $project->totalLeft), 3) * 100 : 0;?>
-                        <?php echo $lang->projectCommon . $lang->project->progress;?> <em><?php echo $progress . $lang->percent;?></em> &nbsp;
+                        <?php echo $lang->project->progress;?> <em><?php echo $progress . $lang->percent;?></em> &nbsp;
                         <div class="progress inline-block">
                           <div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="<?php echo $progress;?>" aria-valuemin="0" aria-valuemax="100" style="width: <?php echo $progress . $lang->percent;?>"></div>
                         </div>
@@ -275,7 +281,6 @@
                 </table>
               </div>
             </div>
-
             <div class="detail">
               <div class="detail-title"><strong><?php echo $lang->project->acl;?></strong></div>
               <div class="detail-content">
@@ -290,6 +295,7 @@
                 <?php endif;?>
               </div>
             </div>
+            <?php $this->printExtendFields($project, 'div', "position=right&inForm=0&inCell=1");?>
           </div>
         </div>
       </div>

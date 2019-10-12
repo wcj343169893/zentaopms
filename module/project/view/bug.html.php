@@ -13,11 +13,11 @@
 <?php include '../../common/view/header.html.php';?>
 <div id="mainMenu" class="clearfix">
   <div class="btn-toolbar pull-left">
-    <span class='btn btn-link btn-active-text'>
-      <span class='text'><?php echo $lang->bug->allBugs;?></span>
-      <span class="label label-light label-badge"><?php echo $pager->recTotal;?></span>
-      <?php if($build) echo ' <span class="label label-danger">Build:' . $build->name . '</span>';?>
-    </span>
+    <?php
+    $buildName = $build ? " <span class='label label-danger'>Build:{$build->name}</span>" : '';
+    echo html::a($this->inlink('bug', "projectID={$project->id}&orderBy=status,id_desc&build=$buildID&type=all"), "<span class='text'>{$lang->bug->allBugs}</span>" . ($type == 'all' ? " <span class='label label-light label-badge'>{$pager->recTotal}</span>$buildName" : ''), '', "id='allTab' class='btn btn-link" . ('all' == $type ? ' btn-active-text' : '') . "'");
+    echo html::a($this->inlink('bug', "projectID={$project->id}&orderBy=status,id_desc&build=$buildID&type=unresolved"), "<span class='text'>{$lang->bug->unResolved}</span>" . ($type == 'unresolved' ? " <span class='label label-light label-badge'>{$pager->recTotal}</span>$buildName" : ''), '', "id='unresolvedTab' class='btn btn-link" . ('unresolved' == $type ? ' btn-active-text' : '') . "'");
+    ?>
     <a class="btn btn-link querybox-toggle" id="bysearchTab"><i class="icon icon-search muted"></i> <?php echo $lang->bug->search;?></a>
   </div>
   <div class="btn-toolbar pull-right">
@@ -26,13 +26,12 @@
   </div>
 </div>
 <div id="mainContent">
-  <div class="cell" id="queryBox"></div>
+  <div class="cell <?php if($type == 'bysearch') echo 'show';?>" id="queryBox"></div>
   <?php if(empty($bugs)):?>
   <div class="table-empty-tip">
     <p>
       <span class="text-muted"><?php echo $lang->bug->noBug;?></span>
       <?php if(common::hasPriv('bug', 'create')):?>
-      <span class="text-muted"><?php echo $lang->youCould;?></span>
       <?php echo html::a($this->createLink('bug', 'create', "productID=$productID&branch=$branchID&extra=projectID=$project->id"), "<i class='icon icon-plus'></i> " . $lang->bug->create, '', "class='btn btn-info'");?>
       <?php endif;?>
     </p>
@@ -55,10 +54,10 @@
           <th class='w-80px'>    <?php common::printOrderLink('severity',     $orderBy, $vars, $lang->bug->severityAB);?></th>
           <th class='c-pri'>     <?php common::printOrderLink('pri',          $orderBy, $vars, $lang->priAB);?></th>
           <th>                   <?php common::printOrderLink('title',        $orderBy, $vars, $lang->bug->title);?></th>
-          <th class='w-user'>    <?php common::printOrderLink('openedBy',     $orderBy, $vars, $lang->openedByAB);?></th>
-          <th class='w-110px c-assignedTo'><?php common::printOrderLink('assignedTo',   $orderBy, $vars, $lang->assignedToAB);?></th>
-          <th class='w-user'>    <?php common::printOrderLink('resolvedBy',   $orderBy, $vars, $lang->bug->resolvedBy);?></th>
-          <th class='w-resolution'><?php common::printOrderLink('resolution', $orderBy, $vars, $lang->bug->resolutionAB);?></th>
+          <th class='c-user'>    <?php common::printOrderLink('openedBy',     $orderBy, $vars, $lang->openedByAB);?></th>
+          <th class='w-110px c-user'><?php common::printOrderLink('assignedTo',   $orderBy, $vars, $lang->assignedToAB);?></th>
+          <th class='w-100px'><?php common::printOrderLink('resolvedBy',   $orderBy, $vars, $lang->bug->resolvedBy);?></th>
+          <th class='w-100px'><?php common::printOrderLink('resolution', $orderBy, $vars, $lang->bug->resolutionAB);?></th>
           <th class='c-actions-5'><?php echo $lang->actions;?></th>
         </tr>
       </thead>

@@ -14,6 +14,7 @@
 $webRoot = $this->app->getWebRoot();
 $jsRoot  = $webRoot . "js/";
 js::set('type', $type);
+if(isset($pageCSS)) css::internal($pageCSS);
 ?>
 <div class='modal-dialog w-500px'>
   <div class="modal-header">
@@ -25,30 +26,30 @@ js::set('type', $type);
       <table class='table table-form'>
         <?php if($showProduct):?>
         <tr>
-          <th class='w-80px'><?php echo $lang->tree->product;?></th>
+          <th class='thWidth'><?php echo $lang->tree->product;?></th>
           <td><?php echo html::select('root', $products, $module->root, "class='form-control chosen'");?></td>
         </tr>
         <?php endif;?>
         <?php $hidden = ($type != 'story' and $module->type == 'story');?>
         <?php if($type == 'doc'):?>
         <tr>
-          <th class='w-80px'><?php echo $lang->doc->lib;?></th>
+          <th class='thWidth'><?php echo $lang->doc->lib;?></th>
           <td><?php echo html::select('root', $libs, $module->root, "class='form-control chosen' onchange=loadDocModule(this.value)");?></td>
         </tr>
         <?php endif;?>
         <?php if($module->type != 'line'):?>
         <tr <?php if($hidden) echo "style='display:none'";?>>
-          <th class='w-80px'><?php echo ($type == 'doc' || $type == 'feedback') ? $lang->tree->parentCate : $lang->tree->parent;?></th>
+          <th class='thWidth'><?php echo ($type == 'doc' || $type == 'feedback') ? $lang->tree->parentCate : $lang->tree->parent;?></th>
           <td><?php echo html::select('parent', $optionMenu, $module->parent, "class='form-control chosen'");?></td>
         </tr>
         <?php endif;?>
         <tr <?php if($hidden) echo "style='display:none'";?>>
-          <th class='w-80px'><?php echo ($type == 'doc' || $type == 'feedback') ? $lang->tree->cate : $lang->tree->name;?></th>
+          <th class='thWidth'><?php echo ($type == 'doc' || $type == 'feedback') ? $lang->tree->cate : $lang->tree->name;?></th>
           <td><?php echo html::input('name', $module->name, "class='form-control'");?></td>
         </tr>
         <?php if($type == 'bug'):?>
         <tr>
-          <th class='w-80px'><?php echo $lang->tree->owner;?></th>
+          <th class='thWidth'><?php echo $lang->tree->owner;?></th>
           <td><?php echo html::select('owner', $users, $module->owner, "class='form-control chosen'", true);?></td>
         </tr>
         <?php endif;?>
@@ -66,6 +67,7 @@ js::set('type', $type);
   </div>
 </div>
 <script>
+<?php if(isset($pageJS)) echo $pageJS;?>
 var currentRoot   = <?php echo $module->root;?>;
 var currentParent = <?php echo $module->parent;?>;
 function getProductModules(productID)

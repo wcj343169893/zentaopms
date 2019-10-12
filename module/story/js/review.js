@@ -33,6 +33,8 @@ function switchShow(result)
         $('#assignedTo').val(assignedTo);
         $('#assignedTo').trigger("chosen:updated");
     }
+
+    getStatus('review', "storyID=" + storyID + ",result=" + result);
 }
 
 function setStory(reason)
@@ -53,3 +55,8 @@ function setStory(reason)
         $('#childStoriesBox').hide();
     }
 }
+
+$(function()
+{
+    if($('.tabs .tab-content .tab-pane.active').children().length == 0) $('.tabs .nav-tabs li.active').css('border-bottom', '1px solid #ccc');
+})

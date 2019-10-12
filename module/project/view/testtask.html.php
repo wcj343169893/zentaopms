@@ -38,7 +38,6 @@
     <p>
       <span class="text-muted"><?php echo $lang->testtask->noTesttask;?></span>
       <?php if(common::hasPriv('testtask', 'create')):?>
-      <span class="text-muted"><?php echo $lang->youCould;?></span>
       <?php echo html::a($this->createLink('testtask', 'create', "product=0&project=$projectID"), "<i class='icon icon-plus'></i> " . $lang->testtask->create, '', "class='btn btn-info'");?>
       <?php endif;?>
     </p>
@@ -91,10 +90,9 @@
           <td><?php echo zget($users, $task->owner);?></td>
           <td><?php echo $task->begin?></td>
           <td><?php echo $task->end?></td>
-          <td title='<?php echo $lang->testtask->statusList[$task->status];?>'>
-            <span class='status-testtask status-<?php echo $task->status?>'>
-              <?php echo $lang->testtask->statusList[$task->status];?>
-            </span>
+          <?php $status = $this->processStatus('task', $task);?>
+          <td title='<?php echo $status;?>'>
+            <span class='status-testtask status-<?php echo $task->status?>'><?php echo $status;?></span>
           </td>
           <td class='c-actions'>
             <?php

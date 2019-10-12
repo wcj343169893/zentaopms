@@ -27,7 +27,7 @@
         <tr>
           <th><?php echo $lang->cron->m;?></th>
           <td><?php echo html::input('m', '', "class='form-control'")?></td>
-          <td><?php echo $lang->cron->notice->m;?></td><td></td>
+          <td colspan='2'><?php echo $lang->cron->notice->m;?></td>
         </tr>
         <tr>
           <th><?php echo $lang->cron->h;?></th>
@@ -60,10 +60,6 @@
         <tr>
           <th><?php echo $lang->cron->type;?></th>
           <td><?php echo html::select('type', $lang->cron->typeList, 'system', "class='form-control'")?></td>
-        </tr>
-        <tr>
-          <th><?php echo $lang->cron->data;?></th>
-          <td colspan='2'><?php echo html::input('data', '', "class='form-control'")?></td><td></td>
         </tr>
         <tr>
           <td colspan='3' class='text-center'><?php echo html::submitButton()?></td>

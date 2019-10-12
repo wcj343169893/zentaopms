@@ -28,6 +28,7 @@ $lang->release->confirmUnlinkStory = "您确认移除该需求吗？";
 $lang->release->confirmUnlinkBug   = "您确认移除该Bug吗？";
 $lang->release->existBuild         = '『版本』已经有『%s』这条记录了。您可以更改『发布名称』或者选择一个『版本』。';
 $lang->release->noRelease          = '暂时没有发布。';
+$lang->release->errorDate          = '发布日期不能大于今天。';
 
 $lang->release->basicInfo = '基本信息';
 
@@ -40,6 +41,7 @@ $lang->release->marker        = '里程碑';
 $lang->release->date          = '发布日期';
 $lang->release->desc          = '描述';
 $lang->release->status        = '状态';
+$lang->release->subStatus     = '子状态';
 $lang->release->last          = '上次发布';
 $lang->release->unlinkStory   = '移除需求';
 $lang->release->unlinkBug     = '移除Bug';
@@ -52,6 +54,7 @@ $lang->release->resolvedBugs  = '本次共解决 %s 个Bug';
 $lang->release->createdBugs   = '本次共遗留 %s 个Bug';
 $lang->release->export        = '导出HTML';
 $lang->release->yesterday     = '昨日发布';
+$lang->release->all           = '所有';
 
 $lang->release->filePath = '下载地址：';
 $lang->release->scmPath  = '版本库地址：';

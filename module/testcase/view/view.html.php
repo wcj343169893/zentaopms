@@ -66,7 +66,7 @@
             <thead>
               <tr>
                 <th class='w-50px'><?php echo $lang->testcase->stepID;?></th>
-                <th class='w-p70 text-left'><?php echo $lang->testcase->stepDesc;?></th>
+                <th class='w-p60 text-left'><?php echo $lang->testcase->stepDesc;?></th>
                 <th class='text-left'><?php echo $lang->testcase->stepExpect;?></th>
               </tr>
             </thead>
@@ -95,8 +95,9 @@
         </div>
       </div>
       <?php echo $this->fetch('file', 'printFiles', array('files' => $case->files, 'fieldset' => 'true'));?>
-      <?php include '../../common/view/action.html.php';?>
     </div>
+    <?php $this->printExtendFields($case, 'div', "position=left&inForm=0&inCell=1");?>
+    <div class='cell'><?php include '../../common/view/action.html.php';?></div>
     <div class='main-actions'>
       <div class="btn-toolbar">
         <?php common::printBack($browseLink);?>
@@ -111,8 +112,11 @@
 
             if($caseFails > 0) common::printIcon('testcase', 'createBug', "product=$case->product&branch=$case->branch&extra=caseID=$case->id,version=$case->version,runID=$runID", $case, 'button', 'bug', '', 'iframe', '', "data-width='90%'");
         }
-        if($config->testcase->needReview or !empty($config->testcase->forceReview)) common::printIcon('testcase', 'review', "caseID=$case->id", $case, 'button', '', '', 'iframe');
+        if($config->testcase->needReview or !empty($config->testcase->forceReview)) common::printIcon('testcase', 'review', "caseID=$case->id", $case, 'button', '', '', 'iframe', '', '', $lang->testcase->reviewAB);
         ?>
+
+        <?php echo $this->buildOperateMenu($case, 'view');?>
+
         <?php
         common::printIcon('testcase', 'edit',"caseID=$case->id", $case);
         if(!$isLibCase) common::printIcon('testcase', 'create', "productID=$case->product&branch=$case->branch&moduleID=$case->module&from=testcase&param=$case->id", $case, 'button', 'copy');
@@ -128,16 +132,15 @@
       <details class="detail" open>
         <summary class="detail-title"><?php echo $lang->testcase->legendBasicInfo;?></summary>
         <div class="detail-content">
-          <?php $widthClass = $app->getClientLang() == 'en' ? 'w-90px' : 'w-60px';?>
           <table class='table table-data'>
             <?php if($isLibCase):?>
             <tr>
-              <th class='<?php echo $widthClass;?>'><?php echo $lang->testcase->lib;?></th>
+              <th class='thWidth'><?php echo $lang->testcase->lib;?></th>
               <td><?php if(!common::printLink('testsuite', 'library', "libID=$case->lib", $libName)) echo $libName;?></td>
             </tr>
             <?php else:?>
             <tr>
-              <th class='<?php echo $widthClass;?>'><?php echo $lang->testcase->product;?></th>
+              <th class='thWidth'><?php echo $lang->testcase->product;?></th>
               <td><?php if(!common::printLink('testcase', 'browse', "productID=$case->product", $productName)) echo $productName;?></td>
             </tr>
             <?php if($this->session->currentProductType != 'normal'):?>
@@ -216,7 +219,7 @@
               <th><?php echo $lang->testcase->status;?></th>
               <td>
                 <?php
-                echo $lang->testcase->statusList[$case->status];
+                echo $this->processStatus('testcase', $case);
                 if($case->version > $case->currentVersion and $from == 'testtask')
                 {
                     echo "(<span class='warning' title={$lang->testcase->fromTesttask}>{$lang->testcase->changed}</span> ";
@@ -272,17 +275,16 @@
       <details class="detail" open>
         <summary class="detail-title"><?php echo $lang->testcase->legendLinkBugs;?></summary>
         <div class="detail-content">
-          <?php $widthClass = $app->getClientLang() == 'en' ? 'w-90px' : 'w-60px';?>
           <table class='table table-data'>
             <?php if($case->fromBug):?>
             <tr>
-              <th class='<?php echo $widthClass;?>'><?php echo $lang->testcase->fromBug;?></th>
+              <th class='thWidth'><?php echo $lang->testcase->fromBug;?></th>
               <td><?php echo html::a($this->createLink('bug', 'view', "bugID=$case->fromBug", '', true), $case->fromBugTitle, '', "class='iframe' data-width='80%'");?></td>
             </tr>
             <?php endif;?>
             <?php if($case->toBugs):?>
             <tr>
-              <th class='<?php echo $widthClass;?>' valign="top"><?php echo $lang->testcase->toBug;?></th>
+              <th class='thWidth' valign="top"><?php echo $lang->testcase->toBug;?></th>
               <td>
               <?php
               foreach($case->toBugs as $bugID => $bugTitle)
@@ -302,16 +304,15 @@
       <details class="detail" open>
         <summary class="detail-title"><?php echo $lang->testcase->legendOpenAndEdit;?></summary>
         <div class="detail-content">
-          <?php $widthClass = $app->getClientLang() == 'en' ? 'w-90px' : 'w-60px';?>
           <table class='table table-data'>
             <tr>
-              <th class='<?php echo $widthClass;?>'><?php echo $lang->testcase->openedBy;?></th>
-              <td><?php echo $users[$case->openedBy] . $lang->at . $case->openedDate;?></td>
+              <th class='lifeThWidth'><?php echo $lang->testcase->openedBy;?></th>
+              <td><?php echo zget($users, $case->openedBy) . $lang->at . $case->openedDate;?></td>
             </tr>
             <?php if($config->testcase->needReview or !empty($config->testcase->forceReview)):?>
             <tr>
               <th><?php echo $lang->testcase->reviewedBy;?></th>
-              <td><?php $reviewedBy = explode(',', $case->reviewedBy); foreach($reviewedBy as $account) echo ' ' . $users[trim($account)]; ?></td>
+              <td><?php $reviewedBy = explode(',', $case->reviewedBy); foreach($reviewedBy as $account) echo ' ' . zget($users, trim($account)); ?></td>
             </tr>
             <tr>
               <th><?php echo $lang->testcase->reviewedDate;?></th>
@@ -320,15 +321,16 @@
             <?php endif;?>
             <tr>
               <th><?php echo $lang->testcase->lblLastEdited;?></th>
-              <td><?php if($case->lastEditedBy) echo $users[$case->lastEditedBy] . $lang->at . $case->lastEditedDate;?></td>
+              <td><?php if($case->lastEditedBy) echo zget($users, $case->lastEditedBy) . $lang->at . $case->lastEditedDate;?></td>
             </tr>
           </table>
         </div>
       </details>
     </div>
+    <?php $this->printExtendFields($case, 'div', "position=right&inForm=0&inCell=1");?>
   </div>
 </div>
 <div id="mainActions" class='main-actions'>
-  <?php common::printPreAndNext($preAndNext);?>
+  <?php common::printPreAndNext($preAndNext, $this->createLink('testcase', 'view', "caseID=%s&version={$case->currentVersion}&from=$from&taskID=$taskID"));?>
 </div>
 <?php include '../../common/view/footer.html.php';?>

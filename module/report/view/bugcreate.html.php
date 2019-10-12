@@ -5,7 +5,7 @@
     <?php include 'blockreportlist.html.php';?>
     <div class='panel panel-body' style='padding: 10px 6px'>
       <div class='text proversion'>
-        <strong class='text-danger small text-latin'>PRO</strong> &nbsp;<span class='text-important'><?php echo $this->app->getClientLang() == 'en'? $lang->report->proVersionEn : $lang->report->proVersion; ?></span>
+        <strong class='text-danger small text-latin'>PRO</strong> &nbsp;<span class='text-important'><?php echo (isset($config->isINT) and $config->isINT) ? $lang->report->proVersionEn : $lang->report->proVersion; ?></span>
       </div>
     </div>
   </div>
@@ -50,7 +50,7 @@
         <div data-ride='table'>
           <table class='table table-condensed table-striped table-bordered table-fixed no-margin' id="bug">
             <thead>
-              <tr class='colhead'>
+              <tr class='colhead text-center'>
                 <th><?php echo $lang->bug->openedBy;?></th>
                 <th><?php echo $lang->bug->unResolved;?></th>
                 <?php foreach($lang->bug->resolutionList as $resolutionType => $resolution):?>

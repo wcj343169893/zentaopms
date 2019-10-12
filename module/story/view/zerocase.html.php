@@ -29,15 +29,15 @@
           </div>
           <?php common::printOrderLink('id', $orderBy, $vars, $lang->idAB);?>
         </th>
-        <th class='w-pri'> <?php common::printOrderLink('pri',        $orderBy, $vars, $lang->priAB);?></th>
-        <th class='w-p30'> <?php common::printOrderLink('title',      $orderBy, $vars, $lang->story->title);?></th>
-        <th>               <?php common::printOrderLink('plan',       $orderBy, $vars, $lang->story->planAB);?></th>
-        <th>               <?php common::printOrderLink('source',     $orderBy, $vars, $lang->story->source);?></th>
-        <th>               <?php common::printOrderLink('openedBy',   $orderBy, $vars, $lang->openedByAB);?></th>
-        <th>               <?php common::printOrderLink('assignedTo', $orderBy, $vars, $lang->assignedToAB);?></th>
-        <th class='w-hour'><?php common::printOrderLink('estimate',   $orderBy, $vars, $lang->story->estimateAB);?></th>
-        <th>               <?php common::printOrderLink('status',     $orderBy, $vars, $lang->statusAB);?></th>
-        <th>               <?php common::printOrderLink('stage',      $orderBy, $vars, $lang->story->stageAB);?></th>
+        <th class='w-pri'>  <?php common::printOrderLink('pri',        $orderBy, $vars, $lang->priAB);?></th>
+        <th class='w-p30'>  <?php common::printOrderLink('title',      $orderBy, $vars, $lang->story->title);?></th>
+        <th>                <?php common::printOrderLink('plan',       $orderBy, $vars, $lang->story->planAB);?></th>
+        <th class='thWidth'><?php common::printOrderLink('source',     $orderBy, $vars, $lang->story->source);?></th>
+        <th class='w-100px'><?php common::printOrderLink('openedBy',   $orderBy, $vars, $lang->openedByAB);?></th>
+        <th class='w-100px'><?php common::printOrderLink('assignedTo', $orderBy, $vars, $lang->assignedToAB);?></th>
+        <th class='w-70px'> <?php common::printOrderLink('estimate',   $orderBy, $vars, $lang->story->estimateAB);?></th>
+        <th class='w-80px'> <?php common::printOrderLink('status',     $orderBy, $vars, $lang->statusAB);?></th>
+        <th class='w-80px'> <?php common::printOrderLink('stage',      $orderBy, $vars, $lang->story->stageAB);?></th>
         <th class='c-actions-5'><?php echo $lang->actions;?></th>
       </tr>
       </thead>
@@ -59,10 +59,10 @@
         <td class='text-left' title="<?php echo $story->title?>"><nobr><?php echo html::a($viewLink, $story->title);?></nobr></td>
         <td title="<?php echo $story->planTitle?>"><?php echo $story->planTitle;?></td>
         <td><?php echo $lang->story->sourceList[$story->source];?></td>
-        <td><?php echo $users[$story->openedBy];?></td>
-        <td><?php echo $users[$story->assignedTo];?></td>
+        <td><?php echo zget($users, $story->openedBy);?></td>
+        <td><?php echo zget($users, $story->assignedTo);?></td>
         <td><?php echo $story->estimate;?></td>
-        <td><span class='status-story status-<?php echo $story->status;?>'><?php echo zget($lang->story->statusList, $story->status);?></span></td>
+        <td><span class='status-story status-<?php echo $story->status;?>'><?php echo $this->processStatus('story', $story);?></span></td>
         <td><?php echo zget($lang->story->stageList, $story->stage);?></td>
         <td class='c-actions'>
           <?php

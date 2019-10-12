@@ -181,7 +181,7 @@ class bug extends control
      * @access public
      * @return void
      */
-    public function report($productID, $browseType, $branchID, $moduleID, $chartType = '')
+    public function report($productID, $browseType, $branchID, $moduleID, $chartType = 'default')
     {
         $this->loadModel('report');
         $this->view->charts   = array();
@@ -193,7 +193,7 @@ class bug extends control
                 $chartFunc   = 'getDataOf' . $chart;
                 $chartData   = $this->bug->$chartFunc();
                 $chartOption = $this->lang->bug->report->$chart;
-                if(!empty($chartType)) $chartOption->type = $chartType;
+                if(!empty($chartType) and $chartType != 'default') $chartOption->type = $chartType;
                 $this->bug->mergeChartOption($chart);
 
                 $this->view->charts[$chart] = $chartOption;
@@ -294,6 +294,8 @@ class bug extends control
                 $this->dao->update(TABLE_TODO)->set('status')->eq('done')->where('id')->eq($output['todoID'])->exec();
                 $this->action->create('todo', $output['todoID'], 'finished', '', "BUG:$bugID");
             }
+
+            $this->executeHooks($bugID);
 
             if(defined('RUN_MODE') && RUN_MODE == 'api') $this->send(array('status' => 'success', 'data' => $bugID));
 
@@ -552,6 +554,8 @@ class bug extends control
         $productName = $this->products[$productID];
         $branches    = $this->session->currentProductType == 'normal' ? array() : $this->loadModel('branch')->getPairs($bug->product);
 
+        $this->executeHooks($bugID);
+
         /* Header and positon. */
         $this->view->title      = "BUG #$bug->id $bug->title - " . $this->products[$productID];
         $this->view->position[] = html::a($this->createLink('bug', 'browse', "productID=$productID"), $productName);
@@ -612,6 +616,9 @@ class bug extends control
             }
             if(defined('RUN_MODE') && RUN_MODE == 'api') $this->send(array('status' => 'success', 'data' => $bugID));
             $bug = $this->bug->getById($bugID);
+
+            $this->executeHooks($bugID);
+
             if($bug->toTask != 0)
             {
                 foreach($changes as $change)
@@ -679,7 +686,6 @@ class bug extends control
         $this->view->openedBuilds     = $openedBuilds;
         $this->view->resolvedBuilds   = array('' => '') + $openedBuilds + $oldResolvedBuild;
         $this->view->actions          = $this->action->getList('bug', $bugID);
-        $this->view->templates        = $this->bug->getUserBugTemplates($this->app->user->account);
 
         $this->display();
     }
@@ -828,6 +834,8 @@ class bug extends control
             $actionID = $this->action->create('bug', $bugID, 'Assigned', $this->post->comment, $this->post->assignedTo);
             $this->action->logHistory($actionID, $changes);
 
+            $this->executeHooks($bugID);
+
             if(isonlybody()) die(js::closeModal('parent.parent'));
             die(js::locate($this->createLink('bug', 'view', "bugID=$bugID"), 'parent'));
         }
@@ -940,6 +948,9 @@ class bug extends control
             if(dao::isError()) die(js::error(dao::getError()));
             $actionID = $this->action->create('bug', $bugID, 'bugConfirmed', $this->post->comment);
             $this->action->logHistory($actionID, $changes);
+
+            $this->executeHooks($bugID);
+
             if(isonlybody()) die(js::closeModal('parent.parent'));
             die(js::locate($this->createLink('bug', 'view', "bugID=$bugID"), 'parent'));
         }
@@ -995,6 +1006,9 @@ class bug extends control
             $this->action->logHistory($actionID, $changes);
 
             $bug = $this->bug->getById($bugID);
+
+            $this->executeHooks($bugID);
+
             if($bug->toTask != 0)
             {
                 /* If task is not finished, update it's status. */
@@ -1085,6 +1099,8 @@ class bug extends control
             $actionID = $this->action->create('bug', $bugID, 'Activated', $this->post->comment);
             $this->action->logHistory($actionID, $changes);
 
+            $this->executeHooks($bugID);
+
             if(isonlybody()) die(js::closeModal('parent.parent'));
             die(js::locate($this->createLink('bug', 'view', "bugID=$bugID"), 'parent'));
         }
@@ -1121,6 +1137,8 @@ class bug extends control
 
             $actionID = $this->action->create('bug', $bugID, 'Closed', $this->post->comment);
             $this->action->logHistory($actionID, $changes);
+
+            $this->executeHooks($bugID);
 
             if(isonlybody()) die(js::closeModal('parent.parent'));
             if(defined('RUN_MODE') && RUN_MODE == 'api')
@@ -1287,46 +1305,11 @@ class bug extends control
         {
             $this->bug->delete(TABLE_BUG, $bugID);
             if($bug->toTask != 0) echo js::alert($this->lang->bug->remindTask . $bug->toTask);
+
+            $this->executeHooks($bugID);
+
             die(js::locate($this->session->bugList, 'parent'));
         }
-    }
-
-    /**
-     * Save current template.
-     *
-     * @access public
-     * @return string
-     */
-    public function saveTemplate()
-    {
-        $this->bug->saveUserBugTemplate();
-        if(dao::isError()) echo js::error(dao::getError(), $full = false);
-        die($this->fetch('bug', 'buildTemplates'));
-    }
-
-    /**
-     * Build the user templates selection code.
-     *
-     * @access public
-     * @return void
-     */
-    public function buildTemplates()
-    {
-        $this->view->templates = $this->bug->getUserBugTemplates($this->app->user->account);
-        $this->display('bug', 'buildTemplates');
-    }
-
-    /**
-     * Delete a user template.
-     *
-     * @param  int    $templateID
-     * @access public
-     * @return void
-     */
-    public function deleteTemplate($templateID)
-    {
-        $this->dao->delete()->from(TABLE_USERTPL)->where('id')->eq($templateID)->andWhere('account')->eq($this->app->user->account)->exec();
-        die();
     }
 
     /**
@@ -1500,8 +1483,8 @@ class bug extends control
             }
 
             /* Get related objects title or names. */
+            $relatedModules = array();
             $productsType   = $this->dao->select('id, type')->from(TABLE_PRODUCT)->where('id')->in($relatedProductIdList)->fetchPairs();
-            $relatedModules = $this->loadModel('tree')->getOptionMenu($productID, 'bug');
             $relatedStories = $this->dao->select('id,title')->from(TABLE_STORY) ->where('id')->in($relatedStoryIdList)->fetchPairs();
             $relatedTasks   = $this->dao->select('id, name')->from(TABLE_TASK)->where('id')->in($relatedTaskIdList)->fetchPairs();
             $relatedBugs    = $this->dao->select('id, title')->from(TABLE_BUG)->where('id')->in($relatedBugIdList)->fetchPairs();
@@ -1509,7 +1492,8 @@ class bug extends control
             $relatedBranch  = array('0' => $this->lang->branch->all) + $this->dao->select('id, name')->from(TABLE_BRANCH)->where('id')->in($relatedBranchIdList)->fetchPairs();
             $relatedBuilds  = array('trunk' => $this->lang->trunk) + $this->dao->select('id, name')->from(TABLE_BUILD)->where('id')->in($relatedBuildIdList)->fetchPairs();
             $relatedFiles   = $this->dao->select('id, objectID, pathname, title')->from(TABLE_FILE)->where('objectType')->eq('bug')->andWhere('objectID')->in(@array_keys($bugs))->andWhere('extra')->ne('editor')->fetchGroup('objectID');
-
+            foreach($relatedProductIdList as $relatedProductId) $relatedModules += $this->loadModel('tree')->getOptionMenu($relatedProductId, 'bug'); 
+            
             foreach($bugs as $bug)
             {
                 if($this->post->fileType == 'csv')
@@ -1538,7 +1522,7 @@ class bug extends control
                 if(isset($bugLang->severityList[$bug->severity]))     $bug->severity   = $bugLang->severityList[$bug->severity];
                 if(isset($bugLang->osList[$bug->os]))                 $bug->os         = $bugLang->osList[$bug->os];
                 if(isset($bugLang->browserList[$bug->browser]))       $bug->browser    = $bugLang->browserList[$bug->browser];
-                if(isset($bugLang->statusList[$bug->status]))         $bug->status     = $bugLang->statusList[$bug->status];
+                if(isset($bugLang->statusList[$bug->status]))         $bug->status     = $this->processStatus('bug', $bug);
                 if(isset($bugLang->confirmedList[$bug->confirmed]))   $bug->confirmed  = $bugLang->confirmedList[$bug->confirmed];
                 if(isset($bugLang->resolutionList[$bug->resolution])) $bug->resolution = $bugLang->resolutionList[$bug->resolution];
 
@@ -1607,6 +1591,7 @@ class bug extends control
             }
 
             if(!(in_array('platform', $productsType) or in_array('branch', $productsType))) unset($fields['branch']);// If products's type are normal, unset branch field.
+            if(isset($this->config->bizVersion)) list($fields, $bugs) = $this->loadModel('workflowfield')->appendDataFromFlow($fields, $bugs);
 
             $this->post->set('fields', $fields);
             $this->post->set('rows', $bugs);
@@ -1614,16 +1599,9 @@ class bug extends control
             $this->fetch('file', 'export2' . $this->post->fileType, $_POST);
         }
 
-        $fileName = $this->lang->bug->common;
+        $fileName    = $this->lang->bug->common;
         $productName = $this->dao->findById($productID)->from(TABLE_PRODUCT)->fetch('name');
-        if(isset($this->lang->bug->featureBar['browse'][$browseType]))
-        {
-            $browseType = $this->lang->bug->featureBar['browse'][$browseType];
-        }
-        else
-        {
-            $browseType = $this->lang->bug->moreSelects[$browseType];
-        }
+        $browseType  = isset($this->lang->bug->featureBar['browse'][$browseType]) ? $this->lang->bug->featureBar['browse'][$browseType] : zget($this->lang->bug->moreSelects, $browseType, '');
 
         $this->view->fileName        = $productName . $this->lang->dash . $browseType . $fileName;
         $this->view->allExportFields = $this->config->bug->list->exportFields;
@@ -1644,5 +1622,24 @@ class bug extends control
         $realname = $this->dao->select('*')->from(TABLE_USER)->where('account')->eq($bug->assignedTo)->fetch('realname');
         $bug->assignedTo = $realname ? $realname : ($bug->assignedTo == 'closed' ? 'Closed' : $bug->assignedTo);
         die(json_encode($bug));
+    }
+
+    /**
+     * Ajax get bug filed options for auto test.
+     * 
+     * @param  int    $productID 
+     * @param  int    $projectID 
+     * @access public
+     * @return void
+     */
+    public function ajaxGetBugFieldOptions($productID, $projectID = 0)
+    {
+        $modules  = $this->loadModel('tree')->getOptionMenu($productID, 'bug');
+        $builds   = $this->loadModel('build')->getProjectBuildPairs($projectID, $productID);
+        $type     = $this->lang->bug->typeList;
+        $pri      = $this->lang->bug->priList;
+        $severity = $this->lang->bug->severityList;
+
+        die(json_encode(array('modules' => $modules, 'categories' => $type, 'versions' => $builds, 'severities' => $severity, 'priorities' => $pri)));
     }
 }

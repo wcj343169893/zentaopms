@@ -23,6 +23,40 @@ class searchModel extends model
      */
     public function setSearchParams($searchConfig)
     {
+        if(isset($this->config->bizVersion))
+        {
+            $module = $searchConfig['module'];
+            if($module == 'projectStory') $module = 'story';
+            if($module == 'projectBug')   $module = 'bug';
+
+            $fields = $this->loadModel('workflowfield')->getList($module);
+
+            foreach($fields as $field)
+            {
+                /* The built-in modules and user defined modules all have the subStatus field, so set its configuration first. */
+                if($field->field == 'subStatus')
+                {
+                    $field = $this->workflowfield->getByField($module, 'subStatus');
+
+                    $searchConfig['fields'][$field->field] = $field->name;
+                    $searchConfig['params'][$field->field] = array('operator' => '=', 'control' => 'select', 'values' => $field->options);
+
+                    continue;
+                }
+
+                /* The other built-in fields do not need to set their configuration. */
+                if($field->buildin) continue;
+
+                /* Set configuration for user defined fields. */
+                $operator = ($field->control == 'input' or $field->control == 'textarea') ? 'include' : '=';
+                $control  = ($field->control == 'select' or $field->control == 'radio' or $field->control == 'checkbox') ? 'select' : 'input';
+                $options  = $this->workflowfield->getFieldOptions($field);
+
+                $searchConfig['fields'][$field->field] = $field->name;
+                $searchConfig['params'][$field->field] = array('operator' => $operator, 'control' => $control,  'values' => $options);
+            }
+        }
+
         $searchParams['module']       = $searchConfig['module'];
         $searchParams['searchFields'] = json_encode($searchConfig['fields']);
         $searchParams['fieldParams']  = json_encode($searchConfig['params']);
@@ -43,11 +77,14 @@ class searchModel extends model
     public function buildQuery()
     {
         /* Init vars. */
-        $where      = '';
-        $groupItems = $this->config->search->groupItems;
-        $groupAndOr = strtoupper($this->post->groupAndOr);
+        $where       = '';
+        $groupItems  = $this->config->search->groupItems;
+        $groupAndOr  = strtoupper($this->post->groupAndOr);
+        $fieldParams = json_decode($this->session->searchParams['fieldParams']);
+        $scoreNum    = 0;
+
         if($groupAndOr != 'AND' and $groupAndOr != 'OR') $groupAndOr = 'AND';
-        $scoreNum = 0;
+
         for($i = 1; $i <= $groupItems * 2; $i ++)
         {
             /* The and or between two groups. */
@@ -60,8 +97,11 @@ class searchModel extends model
             $operatorName = "operator$i";
             $valueName    = "value$i";
 
+            /* Fix bug #2704. */
+            $field = $this->post->$fieldName;
+            if(isset($fieldParams->$field) and $fieldParams->$field->control == 'input' and $this->post->$valueName === '0') $this->post->$valueName = 'ZERO';
+
             /* Skip empty values. */
-            if($this->post->$fieldName == 'activatedCount' and $this->post->$valueName == '0') $this->post->$valueName = 'ZERO';
             if($this->post->$valueName == false) continue;
             if($this->post->$valueName == 'null') $this->post->$valueName = '';  // Null is special, stands to empty.
             if($this->post->$valueName == 'ZERO') $this->post->$valueName = 0;   // ZERO is special, stands to 0.

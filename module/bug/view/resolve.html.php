@@ -32,7 +32,7 @@ js::set('productID' , $bug->product);
     <form method='post' enctype='multipart/form-data' target='hiddenwin'>
       <table class='table table-form'>
         <tr>
-          <th class='w-100px'><?php echo $lang->bug->resolution;?></th>
+          <th class='thWidth'><?php echo $lang->bug->resolution;?></th>
           <td class='w-p35-f'><?php echo html::select('resolution', $lang->bug->resolutionList, '', "class='form-control chosen'  onchange=setDuplicate(this.value)");?></td>
           <td></td>
         </tr>
@@ -73,6 +73,11 @@ js::set('productID' , $bug->product);
           <th><?php echo $lang->bug->assignedTo;?></th>
           <td><?php echo html::select('assignedTo', $users, $assignedTo, "class='form-control chosen'");?></td>
         </tr>
+        <tr class='hide'>
+          <th><?php echo $lang->bug->status;?></th>
+          <td><?php echo html::hidden('status', 'resolved');?></td>
+        </tr>
+        <?php $this->printExtendFields($bug, 'table');?>
         <tr>
           <th><?php echo $lang->bug->files;?></th>
           <td colspan='2'><?php echo $this->fetch('file', 'buildform', 'fileCount=1&percent=0.85');?></td>

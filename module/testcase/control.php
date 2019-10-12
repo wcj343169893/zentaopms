@@ -238,6 +238,8 @@ class testcase extends control
             $this->loadModel('action');
             $this->action->create('case', $caseID, 'Opened');
 
+            $this->executeHooks($caseID);
+
             /* If link from no head then reload. */
             if(isonlybody()) $this->send(array('result' => 'success', 'message' => $this->lang->saveSuccess, 'closeModal' => true));
 
@@ -257,7 +259,7 @@ class testcase extends control
         /* Init vars. */
         $type         = 'feature';
         $stage        = '';
-        $pri          = 0;
+        $pri          = 3;
         $caseTitle    = '';
         $precondition = '';
         $keywords     = '';
@@ -324,7 +326,7 @@ class testcase extends control
             $modules = $this->loadModel('tree')->getStoryModule($currentModuleID);
             $modules = $this->tree->getAllChildID($modules);
         }
-        $stories = $this->story->getProductStoryPairs($productID, $branch, $modules, array_keys($storyStatus), 'id_desc', 50);
+        $stories = $this->story->getProductStoryPairs($productID, $branch, $modules, array_keys($storyStatus), 'id_desc', 50, 'null'); 
         if($storyID and !isset($stories[$storyID])) $stories = $this->story->formatStories(array($storyID => $story)) + $stories;//Fix bug #2406.
 
         /* Set custom. */
@@ -392,7 +394,7 @@ class testcase extends control
 
         /* Set story list. */
         $story     = $storyID ? $this->story->getByID($storyID) : '';
-        $storyList = $storyID ? array($storyID => $story->id . ':' . $story->title . '(' . $this->lang->story->pri . ':' . $story->pri . ',' . $this->lang->story->estimate . ':' . $story->estimate . ')') : array('');
+        $storyList = $storyID ? array($storyID => $story->id . ':' . $story->title) : array('');
 
         /* Set module option menu. */
         $moduleOptionMenu          = $this->tree->getOptionMenu($productID, $viewType = 'case', $startModuleID = 0, $branch);
@@ -514,6 +516,8 @@ class testcase extends control
             ->fetch('count');
         $case->caseFails = $caseFails;
 
+        $this->executeHooks($caseID);
+
         $this->view->position[] = $this->lang->testcase->common;
         $this->view->position[] = $this->lang->testcase->view;
 
@@ -564,6 +568,9 @@ class testcase extends control
                 $actionID = $this->action->create('case', $caseID, $action, $fileAction . $this->post->comment);
                 $this->action->logHistory($actionID, $changes);
             }
+
+            $this->executeHooks($caseID);
+
             die(js::locate($this->createLink('testcase', 'view', "caseID=$caseID"), 'parent'));
         }
 
@@ -769,10 +776,18 @@ class testcase extends control
     {
         if($_POST)
         {
-            $this->testcase->review($caseID);
+            $changes = $this->testcase->review($caseID);
             if(dao::isError()) die(js::error(dao::getError()));
-            $result = $this->post->result;
-            $this->loadModel('action')->create('case', $caseID, 'Reviewed', $this->post->comment, ucfirst($result));
+
+            if($changes)
+            {
+                $result = $this->post->result;
+                $actionID = $this->loadModel('action')->create('case', $caseID, 'Reviewed', $this->post->comment, ucfirst($result));
+                $this->action->logHistory($actionID, $changes);
+            }
+
+            $this->executeHooks($caseID);
+
             die(js::reload('parent.parent'));
         }
 
@@ -792,7 +807,7 @@ class testcase extends control
     public function batchReview($result)
     {
         $caseIdList = $this->post->caseIDList ? $this->post->caseIDList : die(js::locate($this->session->caseList, 'parent'));
-        $caseIDList = array_unique($caseIDList);
+        $caseIdList = array_unique($caseIdList);
         $actions    = $this->testcase->batchReview($caseIdList, $result);
 
         if(dao::isError()) die(js::error(dao::getError()));
@@ -816,6 +831,8 @@ class testcase extends control
         else
         {
             $this->testcase->delete(TABLE_CASE, $caseID);
+
+            $this->executeHooks($caseID);
 
             /* if ajax request, send result. */
             if($this->server->ajax)
@@ -1106,9 +1123,10 @@ class testcase extends control
                 }
             }
 
-            $stmt = $this->dao->select('*')->from(TABLE_TESTRESULT)
-                ->where('`case`')->in(array_keys($cases))
-                ->beginIF($taskID)->andWhere('run')->eq($taskID)->fi()
+            $stmt = $this->dao->select('t1.*')->from(TABLE_TESTRESULT)->alias('t1')
+                ->leftJoin(TABLE_TESTRUN)->alias('t2')->on('t1.run=t2.id')
+                ->where('t1.`case`')->in(array_keys($cases))
+                ->beginIF($taskID)->andWhere('t2.task')->eq($taskID)->fi()
                 ->orderBy('id_desc')
                 ->query();
             $results = array();
@@ -1155,7 +1173,7 @@ class testcase extends control
                 $case->stepExpect = '';
                 $case->real       = '';
                 $result = isset($results[$case->id]) ? $results[$case->id] : array();
-                $case->real = $result[0]['real'];
+                $case->real = empty($result) ? '' : $result[0]['real'];
                 if(isset($relatedSteps[$case->id]))
                 {
                     $i = $childId = 0;
@@ -1198,7 +1216,7 @@ class testcase extends control
 
                 if(isset($caseLang->priList[$case->pri]))              $case->pri           = $caseLang->priList[$case->pri];
                 if(isset($caseLang->typeList[$case->type]))            $case->type          = $caseLang->typeList[$case->type];
-                if(isset($caseLang->statusList[$case->status]))        $case->status        = $caseLang->statusList[$case->status];
+                if(isset($caseLang->statusList[$case->status]))        $case->status        = $this->processStatus('testcase', $case);
                 if(isset($users[$case->openedBy]))                     $case->openedBy      = $users[$case->openedBy];
                 if(isset($users[$case->lastEditedBy]))                 $case->lastEditedBy  = $users[$case->lastEditedBy];
                 if(isset($caseLang->resultList[$case->lastRunResult])) $case->lastRunResult = $caseLang->resultList[$case->lastRunResult];
@@ -1227,6 +1245,7 @@ class testcase extends control
                     $case->linkCase = join("; \n", $tmpLinkCases);
                 }
             }
+            if(isset($this->config->bizVersion)) list($fields, $cases) = $this->loadModel('workflowfield')->appendDataFromFlow($fields, $cases);
 
             $this->post->set('fields', $fields);
             $this->post->set('rows', $cases);
@@ -1287,7 +1306,7 @@ class testcase extends control
                 {
                     $row = new stdclass();
                     $row->module     = $module . "(#$moduleID)";
-                    $row->stepDesc   = "1. \n2. \n3. num:" . $num;
+                    $row->stepDesc   = "1. \n2. \n3.";
                     $row->stepExpect = "1. \n2. \n3.";
 
                     if(empty($rows))
@@ -1637,5 +1656,33 @@ class testcase extends control
         $this->view->bugs  = $this->loadModel('bug')->getCaseBugs($runID, $caseID, $version);
         $this->view->users = $this->loadModel('user')->getPairs('noletter');
         $this->display();
+    }
+
+    /**
+     * Export case getModuleByStory 
+     *
+     * @params int $storyID
+     * @return void
+     */
+    public function ajaxGetStoryModule($storyID)
+    {
+        $story = $this->dao->select('module')->from(TABLE_STORY)->where('id')->eq($storyID)->fetch();
+        $moduleID = !empty($story) ? $story->module : 0; 
+        die(json_encode(array('moduleID'=> $moduleID)));
+    }
+
+    /**
+     * Get status by ajax.
+     *
+     * @param  string $methodName
+     * @param  int    $caseID
+     * @access public
+     * @return void
+     */
+    public function ajaxGetStatus($methodName, $caseID = 0)
+    {
+        $status = $this->testcase->getStatus($methodName, $caseID);
+
+        die($status);
     }
 }

@@ -20,7 +20,6 @@
     <p>
       <span class="text-muted"><?php echo $lang->testcase->noCase;?></span>
       <?php if(common::hasPriv('testcase', 'create')):?>
-      <span class="text-muted"><?php echo $lang->youCould;?></span>
       <?php echo html::a($this->createLink('testcase', 'create', "productID=$productID&branch=$branch&moduleID=$initModule"), "<i class='icon icon-plus'></i> " . $lang->testcase->create, '', "class='btn btn-info'");?>
       <?php endif;?>
     </p>
@@ -83,7 +82,7 @@
           else
           {
               echo "<span class='status-case status-{$case->status}'>";
-              echo $lang->testcase->statusList[$case->status];
+              echo $this->processStatus('testcase', $case);
               echo '</span>';
           }
           ?>

@@ -15,9 +15,11 @@
 <?php js::set('confirmDelete', $lang->release->confirmDelete)?>
 <div id="mainMenu" class="clearfix">
   <div class="btn-toolbar pull-left">
-    <span class='btn btn-link btn-active-text'>
-      <span class='text'><?php echo $lang->release->browse;?></span>
-    </span>
+    <?php
+    echo html::a($this->inlink('browse', "productID={$product->id}&branch=$branch&type=all"), "<span class='text'>{$lang->release->all}</span>" . ($type == 'all' ? ' <span class="label label-light label-badge">' . count($releases) . '</span>' : ''), '', "id='allTab' class='btn btn-link" . ('all' == $type ? ' btn-active-text' : '') . "'");
+    echo html::a($this->inlink('browse', "productID={$product->id}&branch=$branch&type=normal"), "<span class='text'>{$lang->release->statusList['normal']}</span>" . ($type == 'normal' ? ' <span class="label label-light label-badge">' . count($releases) . '</span>' : ''), '', "id='normalTab' class='btn btn-link" . ('normal' == $type ? ' btn-active-text' : '') . "'");
+    echo html::a($this->inlink('browse', "productID={$product->id}&branch=$branch&type=terminate"), "<span class='text'>{$lang->release->statusList['terminate']}</span>" . ($type == 'terminate' ? ' <span class="label label-light label-badge">' . count($releases) . '</span>' : ''), '', "id='terminateTab' class='btn btn-link" . ('terminate' == $type ? ' btn-active-text' : '') . "'");
+    ?>
   </div>
   <div class="btn-toolbar pull-right">
     <?php common::printLink('release', 'create', "productID=$product->id&branch=$branch", "<i class='icon icon-plus'></i> {$lang->release->create}", '', "class='btn btn-primary'");?>
@@ -29,7 +31,6 @@
     <p>
       <span class="text-muted"><?php echo $lang->release->noRelease;?></span>
       <?php if(common::hasPriv('release', 'create')):?>
-      <span class="text-muted"><?php echo $lang->youCould;?></span>
       <?php echo html::a($this->createLink('release', 'create', "productID=$product->id&branch=$branch"), "<i class='icon icon-plus'></i> " . $lang->release->create, '', "class='btn btn-info'");?>
       <?php endif;?>
     </p>
@@ -64,10 +65,9 @@
         <td class='text-center'><?php echo $branches[$release->branch];?></td>
         <?php endif;?>
         <td class='text-center'><?php echo $release->date;?></td>
-        <td class='c-status text-center' title='<?php echo zget($lang->release->statusList, $release->status);?>'>
-          <span class="status-release status-<?php echo $release->status?>">
-            <?php echo zget($lang->release->statusList, $release->status);?>
-          </span>
+        <?php $status = $this->processStatus('release', $release);?>
+        <td class='c-status text-center' title='<?php echo $status;?>'>
+          <span class="status-release status-<?php echo $release->status?>"><?php echo $status;?></span>
         </td>
         <td class='c-actions'>
           <?php

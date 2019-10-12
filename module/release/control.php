@@ -15,6 +15,7 @@ class release extends control
      * Common actions.
      * 
      * @param  int    $productID 
+     * @param  int    $branch 
      * @access public
      * @return void
      */
@@ -34,17 +35,20 @@ class release extends control
      * Browse releases.
      * 
      * @param  int    $productID 
+     * @param  int    $branch 
+     * @param  string $type 
      * @access public
      * @return void
      */
-    public function browse($productID, $branch = 0)
+    public function browse($productID, $branch = 0, $type = 'all')
     {
         $this->commonAction($productID, $branch);
         $this->session->set('releaseList', $this->app->getURI(true));
 
         $this->view->title      = $this->view->product->name . $this->lang->colon . $this->lang->release->browse;
         $this->view->position[] = $this->lang->release->browse;
-        $this->view->releases   = $this->release->getList($productID, $branch);
+        $this->view->releases   = $this->release->getList($productID, $branch, $type);
+        $this->view->type       = $type;
         $this->display();
     }
 
@@ -52,6 +56,7 @@ class release extends control
      * Create a release.
      * 
      * @param  int    $productID 
+     * @param  int    $branch 
      * @access public
      * @return void
      */
@@ -62,6 +67,9 @@ class release extends control
             $releaseID = $this->release->create($productID, $branch);
             if(dao::isError()) $this->send(array('result' => 'fail', 'message' => dao::getError()));
             $this->loadModel('action')->create('release', $releaseID, 'opened');
+
+            $this->executeHooks($releaseID);
+
             $this->send(array('result' => 'success', 'message' => $this->lang->saveSuccess, 'locate' => inlink('view', "releaseID=$releaseID")));
         }
 
@@ -100,6 +108,7 @@ class release extends control
                 $actionID = $this->loadModel('action')->create('release', $releaseID, 'Edited', $fileAction);
                 if(!empty($changes)) $this->action->logHistory($actionID, $changes);
             }
+            $this->executeHooks($releaseID);
             $this->send(array('result' => 'success', 'message' => $this->lang->saveSuccess, 'locate' => inlink('view', "releaseID=$releaseID")));
         }
         $this->loadModel('story');
@@ -123,6 +132,10 @@ class release extends control
      * View a release.
      * 
      * @param  int    $releaseID 
+     * @param  string $type 
+     * @param  string $link 
+     * @param  string $param 
+     * @param  string $orderBy 
      * @access public
      * @return void
      */
@@ -136,10 +149,11 @@ class release extends control
 
         $release = $this->release->getById((int)$releaseID, true);
         if(!$release) die(js::error($this->lang->notFound) . js::locate('back'));
-
+        
         $stories = $this->dao->select('*')->from(TABLE_STORY)->where('id')->in($release->stories)->andWhere('deleted')->eq(0)
-            ->beginIF($type == 'story')->orderBy($orderBy)->fi()
-            ->fetchAll('id');
+                ->beginIF($type == 'story')->orderBy($orderBy)->fi()
+                ->fetchAll('id');
+
         $this->loadModel('common')->saveQueryCondition($this->dao->get(), 'story');
         $stages = $this->dao->select('*')->from(TABLE_STORYSTAGE)->where('story')->in($release->stories)->andWhere('branch')->eq($release->branch)->fetchPairs('story', 'stage');
         foreach($stages as $storyID => $stage)$stories[$storyID]->stage = $stage;
@@ -156,6 +170,8 @@ class release extends control
 
         $this->commonAction($release->product);
         $product = $this->product->getById($release->product);
+
+        $this->executeHooks($releaseID);
 
         $this->view->title         = "RELEASE #$release->id $release->name/" . $product->name;
         $this->view->position[]    = $this->lang->release->view;
@@ -195,6 +211,8 @@ class release extends control
             $build   = $this->dao->select('*')->from(TABLE_BUILD)->where('id')->eq((int)$release->build)->fetch();
             if(empty($build->project)) $this->loadModel('build')->delete(TABLE_BUILD, $build->id);
 
+            $this->executeHooks($releaseID);
+
             /* if ajax request, send result. */
             if($this->server->ajax)
             {
@@ -219,7 +237,6 @@ class release extends control
     /**
      * Export the stories of release to HTML.
      * 
-     * @param  string $type story | bug
      * @access public
      * @return void
      */
@@ -518,6 +535,7 @@ class release extends control
      * 
      * @param  int    $releaseID
      * @param  int    $bugID 
+     * @param  string $type 
      * @access public
      * @return void
      */
@@ -546,7 +564,8 @@ class release extends control
     /**
      * Batch unlink story. 
      * 
-     * @param  int $releaseID 
+     * @param  int    $releaseID 
+     * @param  string $type 
      * @access public
      * @return void
      */

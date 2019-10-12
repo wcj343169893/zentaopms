@@ -88,6 +88,9 @@ class testsuite extends control
                 $this->send($response);
             }
             $actionID = $this->loadModel('action')->create('testsuite', $suiteID, 'opened');
+
+            $this->executeHooks($suiteID);
+
             $response['locate']  = $this->createLink('testsuite', 'browse', "productID=$productID");
             $response['message'] = $this->lang->testsuite->successSaved;
             $this->send($response);
@@ -120,6 +123,7 @@ class testsuite extends control
      */
     public function view($suiteID, $orderBy = 'id_desc', $recTotal = 0, $recPerPage = 20, $pageID = 1)
     {
+        $this->app->loadLang('testtask');
         /* Get test suite, and set menu. */
         $suite = $this->testsuite->getById($suiteID, true);
         if(!$suite) die(js::error($this->lang->notFound) . js::locate('back'));
@@ -138,6 +142,8 @@ class testsuite extends control
         /* Load pager. */
         $this->app->loadClass('pager', $static = true);
         $pager = pager::init($recTotal, $recPerPage, $pageID);
+
+        $this->executeHooks($suiteID);
 
         $this->view->title      = "SUITE #$suite->id $suite->name/" . $this->products[$productID];
         $this->view->position[] = html::a($this->createLink('testsuite', 'browse', "productID=$productID"), $this->products[$productID]);
@@ -184,6 +190,9 @@ class testsuite extends control
                 $actionID = $this->loadModel('action')->create($objectType, $suiteID, 'edited');
                 $this->action->logHistory($actionID, $changes);
             }
+
+            $this->executeHooks($suiteID);
+
             $method = $suite->type == 'library' ? 'libView' : 'view';
             $response['locate']  = inlink($method, "suiteID=$suiteID");
             $response['message'] = $this->lang->testsuite->successSaved;
@@ -243,6 +252,8 @@ class testsuite extends control
             if($suite->type == 'private' and $suite->addedBy != $this->app->user->account and !$this->app->user->admin) die(js::error($this->lang->error->accessDenied) . js::locate('back'));
 
             $this->testsuite->delete($suiteID);
+
+            $this->executeHooks($suiteID);
 
             /* if ajax request, send result. */
             if($this->server->ajax)
@@ -635,7 +646,7 @@ class testsuite extends control
      */
     public function libView($libID)
     {
-        $lib = $this->testsuite->getById($libID);
+        $lib = $this->testsuite->getById($libID, true);
 
         /* Set lib menu. */
         $libraries = $this->testsuite->getLibraries();
@@ -648,8 +659,9 @@ class testsuite extends control
         $this->view->position[] = $this->lang->testsuite->common;
         $this->view->position[] = $this->lang->testsuite->view;
 
-        $this->view->lib      = $lib;
-        $this->view->actions  = $this->loadModel('action')->getList('caselib', $libID);
+        $this->view->lib     = $lib;
+        $this->view->users   = $this->loadModel('user')->getPairs('noclosed|noletter');
+        $this->view->actions = $this->loadModel('action')->getList('caselib', $libID);
         $this->display();
     }
 

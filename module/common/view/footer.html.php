@@ -1,5 +1,7 @@
 </div><?php /* end '.outer' in 'header.html.php'. */ ?>
-<script>$.initSidebar()</script>
+<script>
+$.initSidebar();
+</script>
 <?php if($extView = $this->getExtViewFile(__FILE__)){include $extView; return helper::cd();}?>
 
 <iframe frameborder='0' name='hiddenwin' id='hiddenwin' scrolling='no' class='debugwin hidden'></iframe>
@@ -25,7 +27,10 @@ function ajaxIgnoreBrowser(){$.get(createLink('misc', 'ajaxIgnoreBrowser'));}
 $(function(){showBrowserNotice()});
 <?php endif;?>
 
-/* Alert get message. */
+<?php $this->app->loadConfig('message');?>
+<?php if($config->message->browser->turnon):?>
+/* Alert got messages. */
+needPing = false;
 $(function()
 {
     var windowBlur = false;
@@ -52,8 +57,9 @@ $(function()
                 }
             }
         });
-    }, 5 * 60 * 1000);
+    }, <?php echo $config->message->browser->pollTime * 1000;?>);
 })
+<?php endif;?>
 
 <?php if(!empty($config->sso->redirect)):?>
 <?php

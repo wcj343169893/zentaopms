@@ -12,6 +12,9 @@
 ?>
 <?php include './header.html.php';?>
 <?php js::set('holders', $lang->story->placeholder); ?>
+<?php if(common::checkNotCN()):?>
+<style> .sourceTd > .input-group > .input-group > .input-group-addon:first-child{padding: 5px 18px} </style>
+<?php endif;?>
 <div id="mainContent" class="main-content">
   <div class="center-block">
     <div class="main-header">
@@ -55,7 +58,7 @@
             </td>
           </tr>
           <tr>
-            <th><?php echo $lang->story->plan;?></th>
+            <th><?php echo $lang->story->planAB;?></th>
             <td colspan="2">
               <div class='input-group' id='planIdBox'>
                 <?php
@@ -73,7 +76,7 @@
               </div>
             </td>
             <?php if(strpos(",$showFields,", ',source,') !== false):?>
-            <td colspan="2">
+            <td colspan="2" class='sourceTd'>
               <div class="input-group">
                 <div class="input-group">
                   <div class="input-group-addon"><?php echo $lang->story->source;?></div>
@@ -159,7 +162,10 @@
           </tr>
           <tr>
             <th><?php echo $lang->story->spec;?></th>
-            <td colspan="4"><?php echo html::textarea('spec', $spec, "rows='9' class='form-control kindeditor disabled-ie-placeholder' hidefocus='true' placeholder='" . htmlspecialchars($lang->story->specTemplate) . "'");?></td>
+            <td colspan="4">
+              <?php echo $this->fetch('user', 'ajaxPrintTemplates', 'type=story&link=spec');?>
+              <?php echo html::textarea('spec', $spec, "rows='9' class='form-control kindeditor disabled-ie-placeholder' hidefocus='true' placeholder='" . htmlspecialchars($lang->story->specTemplate) . "'");?>
+            </td>
           </tr>
           <?php if(strpos(",$showFields,", ',verify,') !== false):?>
           <tr>
@@ -167,6 +173,11 @@
             <td colspan="4"><?php echo html::textarea('verify', $verify, "rows='6' class='form-control kindeditor' hidefocus='true'");?></td>
           </tr>
           <?php endif;?>
+          <tr class='hide'>
+            <th><?php echo $lang->story->status;?></th>
+            <td><?php echo html::hidden('status', 'draft');?></td>
+          </tr>
+          <?php $this->printExtendFields('', 'table');?>
           <tr>
             <th><?php echo $lang->story->legendAttatch;?></th>
             <td colspan='4'><?php echo $this->fetch('file', 'buildform');?></td>
@@ -203,5 +214,6 @@
     </form>
   </div>
 </div>
+<?php js::set('projectID', $projectID);?>
 <?php js::set('storyModule', $lang->story->module);?>
 <?php include '../../common/view/footer.html.php';?>

@@ -52,7 +52,6 @@ $(document).ready(function()
         $('#module').trigger('chosen:close');
     });
 
-    $('#pageActions ul.dropdown-menu').css('left', '67px');
     $('.libs-group.sort').sortable(
     {
         trigger:  '.lib',
@@ -121,7 +120,14 @@ $(document).ready(function()
         };
 
         var defaultWidth = $.zui.store.get('splitRowFirstSize:' + id);
-        if (defaultWidth) setFirstColWidth(defaultWidth);
+        if(typeof(defaultWidth) == 'undefined')
+        {
+            defaultWidth = 0;
+            $firstCol.find('.tabs ul.nav-tabs li').each(function(){defaultWidth += $(this).outerWidth()});
+            defaultWidth += ($firstCol.find('.tabs ul.nav-tabs li').length - 1) * 10;
+            defaultWidth += 30;
+        }
+        setFirstColWidth(defaultWidth);
 
         var documentEventName = '.' + id;
 
@@ -161,7 +167,8 @@ $(document).ready(function()
         var resizeCols = function() {
             var cellHeight = $(window).height() - $('#footer').outerHeight() - $('#header').outerHeight() - 42;
             $cols.children('.panel').height(cellHeight).css('maxHeight', cellHeight).find('.panel-body').css('position', 'absolute');
-            $cols.find('.tab-content').height(cellHeight - $cols.find('.nav-tabs').height() - 35).css('maxHeight', cellHeight - $cols.find('.nav-tabs').height() - 35).css('overflow-y', 'auto');
+            var sideHeight = cellHeight - $cols.find('.nav-tabs').height() - $cols.find('.side-footer').height() - 35;
+            $cols.find('.tab-content').height(sideHeight).css('maxHeight', sideHeight).css('overflow-y', 'auto');
         };
 
         $(window).on('resize', resizeCols);

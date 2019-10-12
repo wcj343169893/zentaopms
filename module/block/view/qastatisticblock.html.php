@@ -115,12 +115,12 @@ $(function()
             <div class="progress-pie inline-block space progress-pie-100" data-value="<?php echo $product->assignedRate;?>" data-doughnut-size="80">
               <canvas width="100" height="100" style="width: 100px; height: 100px;"></canvas>
               <div class="progress-info">
-                <small><?php echo $lang->bug->allBugs . ' Bug';?></small>
-                <strong><span class="progress-value"><?php echo $product->total;?></span></strong>
+                <small><?php echo $lang->bug->allBugs;?></small>
+                <strong><?php echo empty($product->total) ? 0 : html::a($this->createLink('bug', 'browse', "productID={$product->id}&branch=&type=all"), $product->total);?></strong>
               </div>
             </div>
             <div class="text-center small with-padding">
-              <span class="label label-dot label-primary"></span> &nbsp; <?php echo $lang->bug->assignToMe;?> &nbsp; <strong><?php echo $product->assignedToMe;?></strong>
+              <span class="label label-dot label-primary"></span> &nbsp; <?php echo $lang->bug->assignToMe;?> &nbsp; <strong><?php echo empty($product->assignedToMe) ? 0 : html::a($this->createLink('bug', 'browse', "productID={$product->id}&branch=&browseType=assigntome"), $product->assignedToMe);?></strong>
             </div>
           </div>
           <div class="col-7">
@@ -136,7 +136,7 @@ $(function()
                   <span><?php echo $lang->bug->unResolved;?></span>
                 </div>
                 <div class="type-value">
-                  <strong><?php echo $product->unresolved;?></strong>
+                  <strong><?php echo empty($product->unresolved) ? 0 : html::a($this->createLink('bug', 'browse', "productID={$product->id}&branch=&browseType=unresolved"), $product->unresolved);?></strong>
                 </div>
               </div>
             </div>
@@ -152,7 +152,7 @@ $(function()
                   <span><?php echo $lang->bug->unconfirmed;?></span>
                 </div>
                 <div class="type-value">
-                  <strong><?php echo $product->unconfirmed;?></strong>
+                  <strong><?php echo empty($product->unconfirmed) ? 0 : html::a($this->createLink('bug', 'browse', "productID={$product->id}&branch=&browseType=unconfirmed"), $product->unconfirmed);?></strong>
                 </div>
               </div>
             </div>
@@ -168,7 +168,7 @@ $(function()
                   <span><?php echo $lang->bug->unclosed;?></span>
                 </div>
                 <div class="type-value">
-                  <strong><?php echo $product->unclosed;?></strong>
+                  <strong><?php echo empty($product->unclosed) ? 0 : html::a($this->createLink('bug', 'browse', "productID={$product->id}&branch=&browseType=unclosed"), $product->unclosed);?></strong>
                 </div>
               </div>
             </div>

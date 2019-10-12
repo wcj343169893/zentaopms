@@ -12,7 +12,7 @@
 .product-info .progress {position: absolute; left: 10px; top: 35px; right: 100px;}
 .product-info .progress-info {position: absolute; left: 8px; top: 10px; width: 180px; font-size: 12px;}
 .product-info .type-info {color: #A6AAB8; text-align: center; position: absolute; right: 0; top: 6px; width: 100px;}
-html[lang="en"] .product-info .type-info {color: #A6AAB8; text-align: center; position: absolute; right: 0; top: 6px; width: 130px;}
+html[lang="en"] .product-info .type-info {color: #A6AAB8; text-align: center; position: absolute; right: 0; top: 6px; width: 110px;}
 .product-info .type-value,
 .product-info .type-label {font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
 .product-info .type-value {font-size: 14px;}
@@ -135,18 +135,18 @@ $(function()
                   <table class='status-count'>
                     <tr>
                       <td class='text-right'><?php echo $lang->task->allTasks;?> :</td>
-                      <td class='text-left'><?php echo $project->totalTasks;?></td>
+                      <td class='text-left'><?php echo empty($project->totalTasks) ? 0 : html::a($this->createLink('project', 'task', "projectID={$project->id}&status=all"), $project->totalTasks);?></td>
                     </tr>
                     <tr>
                       <td class='text-right'><?php echo $lang->task->noFinished;?> :</td>
-                      <td class='text-left'><?php echo $project->undoneTasks;?></td>
+                      <td class='text-left'><?php echo empty($project->undoneTasks) ? 0 : html::a($this->createLink('project', 'task', "projectID={$project->id}&status=undone"), $project->undoneTasks);?></td>
                     </tr>
                   </table>
                 </div>
               </div>
             </div>
             <div class="product-info">
-              <div class="progress-info"><i class="icon icon-check-circle text-success icon-sm"></i> <span class="text-muted"><?php echo $lang->story->stageList['released'];?></span> <strong><?php echo $project->releasedStories;?></strong></div>
+              <div class="progress-info"><i class="icon icon-check-circle text-success icon-sm"></i> <span class="text-muted"><?php echo $lang->story->released;?></span> <strong><?php echo $project->releasedStories;?></strong></div>
               <div class="progress">
                 <div class="progress-bar" role="progressbar" aria-valuenow="<?php echo $project->storyProgress;?>" aria-valuemin="0" aria-valuemax="100" style="width: <?php echo $project->storyProgress;?>%"></div>
               </div>
@@ -155,11 +155,11 @@ $(function()
                   <table class='status-count'>
                     <tr>
                       <td class='text-right'><?php echo $lang->story->total;?> :</td>
-                      <td class='text-left'><?php echo $project->totalStories;?></td>
+                      <td class='text-left'><?php echo empty($project->totalStories) ? 0 : html::a($this->createLink('project', 'story', "projectID={$project->id}&orderBy=order_desc&type=all"), $project->totalStories);?></td>
                     </tr>
                     <tr>
                       <td class='text-right'><?php echo $lang->story->unclosed;?> :</td>
-                      <td class='text-left'><?php echo $project->unclosedStories;?></td>
+                      <td class='text-left'><?php echo empty($project->unclosedStories) ? 0 : html::a($this->createLink('project', 'story', "projectID={$project->id}&orderBy=order_desc&type=unclosed"), $project->unclosedStories);?></td>
                     </tr>
                   </table>
                 </div>
@@ -175,12 +175,12 @@ $(function()
                 <div class="type-label">
                   <table class='status-count'>
                     <tr>
-                      <td class='text-right'><?php echo $lang->bug->allBugs . ' Bug';?> :</td>
-                      <td class='text-left'><?php echo $project->totalBugs;?></td>
+                      <td class='text-right'><?php echo $lang->bug->allBugs;?> :</td>
+                      <td class='text-left'><?php echo empty($project->totalBugs) ? 0 : html::a($this->createLink('project', 'bug', "projectID={$project->id}&orderBy=status,id_desc&build=0&type=all"), $project->totalBugs);?></td>
                     </tr>
                     <tr>
                       <td class='text-right'><?php echo $lang->bug->unResolved;?> :</td>
-                      <td class='text-left'><?php echo $project->activeBugs;?></td>
+                      <td class='text-left'><?php echo empty($project->activeBugs) ? 0 : html::a($this->createLink('project', 'bug', "projectID={$project->id}&orderBy=status,id_desc&build=0&type=unresolved"), $project->activeBugs);?></td>
                     </tr>
                   </table>
                 </div>

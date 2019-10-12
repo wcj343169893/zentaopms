@@ -1,0 +1,12 @@
+#infoPanel > .alert {border-radius: 0; margin: 0}
+#infoPanel .alert > .content > h3 {margin-top: 0}
+.space {margin-bottom: 10px!important;}
+.no-margin {margin: 0!important}
+#updateDetails {margin-top: 5px}
+#updateDetails > .article-content {padding: 10px; max-height: 450px; overflow: auto; background: #e5e5e5;     background: rgba(0,0,0,.1); border-radius: 2px;}
+#messageBox > .content > .actions {margin-top: 10px;}
+#messageBox > .icon {vertical-align: top;}
+#updateForm > .panel-body {padding-left: 74px;}
+.disabled {opacity: 0.9; pointer-events: none; cursor: not-allowed}
+.popover.popover-success.top .arrow:after {border-top-color: #47A447}
+.errorInfo {display:none;}

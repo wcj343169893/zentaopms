@@ -83,7 +83,6 @@
     <p>
       <span class="text-muted"><?php echo $lang->task->noTask;?></span>
       <?php if(common::hasPriv('task', 'create', $checkObject)):?>
-      <span class="text-muted"><?php echo $lang->youCould;?></span>
       <?php echo html::a($this->createLink('task', 'create', "project=$projectID" . (isset($moduleID) ? "&storyID=&moduleID=$moduleID" : '')), "<i class='icon icon-plus'></i> " . $lang->task->create, '', "class='btn btn-info'");?>
       <?php endif;?>
     </p>
@@ -115,11 +114,11 @@
         <th class="c-name"><?php echo $lang->task->name;?></th>
         <th class="c-status"><?php echo $lang->task->status;?></th>
         <th class="c-assign text-left"><?php echo $lang->task->assignedTo;?></th>
-        <th class="c-user"><?php echo $lang->task->finishedBy;?></th>
-        <th class="w-50px"><?php echo $lang->task->estimateAB;?></th>
+        <th class="w-90px"><?php echo $lang->task->finishedBy;?></th>
+        <th class="w-60px"><?php echo $lang->task->estimateAB;?></th>
         <th class="w-50px"><?php echo $lang->task->consumedAB;?></th>
         <th class="w-50px"><?php echo $lang->task->leftAB;?></th>
-        <th class="w-50px"><?php echo $lang->task->progress;?></th>
+        <th class="w-50px" title='<?php echo $lang->task->progress;?>'><?php echo $lang->task->progressAB;?></th>
         <th class="c-type"><?php echo $lang->typeAB;?></th>
         <th class="c-date"><?php echo $lang->task->deadlineAB;?></th>
         <th class="c-actions-3"><?php echo $lang->actions;?></th>
@@ -182,7 +181,7 @@
             <?php echo html::a('###', "<i class='icon-caret-down'></i> " . $groupName, '', "class='text-primary' title='$groupName'");?>
             <div class='groupSummary small'>
 
-            <?php if($groupBy == 'assignedTo' and isset($members[$task->assignedTo])) printf($lang->project->memberHoursAB, $users[$task->assignedTo], $members[$task->assignedTo]->totalHours);?>
+            <?php if($groupBy == 'assignedTo' and isset($members[$task->assignedTo])) printf($lang->project->memberHoursAB, zget($users, $task->assignedTo), $members[$task->assignedTo]->totalHours);?>
             <?php printf($lang->project->groupSummaryAB, $groupSum, $groupWait, $groupDoing, $groupEstimate, $groupConsumed, $groupLeft);?>
             </div>
           </div>
@@ -198,7 +197,7 @@
             if(!common::printLink('task', 'view', "task=$task->id", $task->name)) echo $task->name;
           ?>
         </td>
-        <td class="c-status"><span class='status-task status-<?php echo $task->status;?>'> <?php echo $lang->task->statusList[$task->status];?></span></td>
+        <td class="c-status"><span class='status-task status-<?php echo $task->status;?>'> <?php echo $this->processStatus('task', $task);?></span></td>
         <td class="c-assign"><?php echo "<span class='$assignedToClass'>" . $task->assignedToRealName . "</span>";?></td>
         <td class='c-user'><?php echo zget($users, $task->finishedBy);?></td>
         <td class="c-hours em"><?php echo $task->estimate;?></td>
@@ -222,7 +221,7 @@
         </td>
         <td colspan='13'>
           <div class="table-row segments-list">
-          <?php if($groupBy == 'assignedTo' and isset($members[$task->assignedTo])) printf($lang->project->memberHours, $users[$task->assignedTo], $members[$task->assignedTo]->totalHours);?>
+          <?php if($groupBy == 'assignedTo' and isset($members[$task->assignedTo])) printf($lang->project->memberHours, zget($users, $task->assignedTo), $members[$task->assignedTo]->totalHours);?>
           <?php printf($lang->project->countSummary, $groupSum, $groupDoing, $groupWait);?>
           <?php printf($lang->project->timeSummary, $groupEstimate, $groupConsumed, $groupLeft);?>
           </div>

@@ -24,10 +24,11 @@ $lang->group->manageMember       = '成员维护';
 $lang->group->confirmDelete      = '您确定删除该用户分组吗？';
 $lang->group->successSaved       = '成功保存';
 $lang->group->errorNotSaved      = '没有保存，请确认选择了权限数据。';
-$lang->group->viewList           = '允许访问视图';
-$lang->group->productList        = '允许访问' . $lang->productCommon;
-$lang->group->projectList        = '允许访问' . $lang->projectCommon;
-$lang->group->noticeVisit        = '空代表访问没有访问限制';
+$lang->group->viewList           = '可访问视图';
+$lang->group->productList        = '可访问' . $lang->productCommon;
+$lang->group->projectList        = '可访问' . $lang->projectCommon;
+$lang->group->dynamic            = '可查看动态';
+$lang->group->noticeVisit        = '空代表没有访问限制';
 
 $lang->group->id       = '编号';
 $lang->group->name     = '分组名称';
@@ -48,6 +49,7 @@ $lang->group->copyOptions['copyPriv'] = '复制权限';
 $lang->group->copyOptions['copyUser'] = '复制用户';
 
 $lang->group->versions['']          = '修改历史';
+$lang->group->versions['11_6_2']    = '禅道11.6.2';
 $lang->group->versions['10_6']      = '禅道10.6';
 $lang->group->versions['10_1']      = '禅道10.1';
 $lang->group->versions['10_0_alpha']= '禅道10.0.alpha';

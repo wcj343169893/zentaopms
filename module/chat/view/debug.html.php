@@ -1,14 +1,21 @@
 <?php
 /**
- * The debug view file of chat module of RanZhi.
+ * The debug view file of chat module of XXB.
  *
  * @copyright   Copyright 2009-2018 青岛易软天创网络科技有限公司(QingDao Nature Easy Soft Network Technology Co,LTD, www.cnezsoft.com)
  * @license     ZPL (http://zpl.pub/page/zplv12.html)
  * @author      Gang Liu <liugang@cnezsoft.com>
  * @package     chat
  * @version     $Id$
- * @link        http://www.ranzhi.org
+ * @link        http://xuan.im
  */
+?>
+<?php 
+    if($source == 'x_php')
+    { 
+        include 'xdebug.html.php';
+        return;
+    }
 ?>
 <?php if($this->app->user->admin != 'super'):?>
 <?php include '../../common/view/header.lite.html.php';?>
@@ -45,7 +52,7 @@
     <?php if(!helper::isAjaxRequest()):?>
     <tr>
       <th></th>
-      <td><?php commonModel::printLink('setting', 'xuanxuan', '', $lang->goback, "class='btn btn-primary'");?></td>
+      <td><?php commonModel::printLink('setting', 'xuanxuan', '', $lang->goback, '', "class='btn btn-primary'");?></td>
     </tr>
     <?php endif;?>
   </table>

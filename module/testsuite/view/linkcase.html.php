@@ -33,7 +33,7 @@
     <table class='table tablesorter' id='testcaseList'>
       <thead>
         <tr>
-          <th class='w-id'>
+          <th class='c-id'>
             <div class="checkbox-primary check-all" title="<?php echo $lang->selectAll?>">
               <label></label>
             </div>
@@ -43,8 +43,8 @@
           <th class='w-pri text-center'><?php echo $lang->priAB;?></th>
           <th><?php echo $lang->testcase->title;?></th>
           <th class='w-type'><?php echo $lang->testcase->type;?></th>
-          <th class='w-user text-center'><?php echo $lang->openedByAB;?></th>
-          <th class='w-status text-center'><?php echo $lang->statusAB;?></th>
+          <th class='c-user text-center'><?php echo $lang->openedByAB;?></th>
+          <th class='c-status text-center'><?php echo $lang->statusAB;?></th>
         </tr>
       </thead>
       <tbody>
@@ -67,7 +67,7 @@
         </td>
         <td><?php echo $lang->testcase->typeList[$case->type];?></td>
         <td><?php echo zget($users, $case->openedBy);?></td>
-        <td class='case-<?php echo $case->status?>'><?php echo $lang->testcase->statusList[$case->status];?></td>
+        <td class='case-<?php echo $case->status?>'><?php echo $this->processStatus('testcase', $case);?></td>
       </tr>
       <?php endforeach;?>
       </tbody>
@@ -78,7 +78,7 @@
       <div class='table-actions btn-toolbar show-always'>
         <?php echo html::submitButton('', '', 'btn btn-secondary');?>
       </div>
-      <div class="table-statistic"></div>
+      <div class="text"></div>
       <?php $pager->show('right', 'pagerjs');?>
     </div>
     <?php endif;?>

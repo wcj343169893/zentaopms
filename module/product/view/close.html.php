@@ -15,7 +15,7 @@
 <div id='mainContent' class='main-content'>
   <div class='main-header'>
     <h2>
-      <span class='prefix'><?php echo html::icon($lang->icons['product']);?> <strong><?php echo $product->id;?></strong></span>
+      <span class='prefix label-id'><strong><?php echo $product->id;?></strong></span>
       <?php echo isonlybody() ? ("<span title='$product->name'>" . $product->name . '</span>') : html::a($this->createLink('product', 'view', "productID=$product->id"), $product->name);?>
       <?php if(!isonlybody()):?>
       <small><?php echo $lang->arrow . $lang->product->close;?></small>
@@ -24,6 +24,11 @@
   </div>
   <form class='load-indicator main-form' method='post' target='hiddenwin'>
     <table class='table table-form'>
+      <tr class='hide'>
+        <th class='w-40px'><?php echo $lang->product->status;?></th>
+        <td><?php echo html::hidden('status', 'closed');?></td>
+      </tr>
+      <?php $this->printExtendFields($product, 'table');?>
       <tr>
         <th class='w-40px'><?php echo $lang->comment;?></th>
         <td><?php echo html::textarea('comment', '', "rows='6' class='form-control kindeditor' hidefocus='true'");?></td>

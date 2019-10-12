@@ -30,11 +30,12 @@ class todoModel extends model
             ->setIF($this->post->type == 'bug'  and $this->post->bug,  'idvalue', $this->post->bug)
             ->setIF($this->post->type == 'task' and $this->post->task, 'idvalue', $this->post->task)
             ->setIF($this->post->type == 'story' and $this->post->story, 'idvalue', $this->post->story)
+            ->setIF($this->post->type == 'feedback' and $this->post->feedback, 'idvalue', $this->post->feedback)
             ->setIF($this->post->date == false,  'date', '2030-01-01')
             ->setIF($this->post->begin == false, 'begin', '2400')
             ->setIF($this->post->end   == false, 'end',   '2400')
             ->stripTags($this->config->todo->editor->create['id'], $this->config->allowedTags)
-            ->remove('bug, task, story, uid')
+            ->remove('bug, task, story, uid, feedback')
             ->get();
         if(empty($todo->cycle)) unset($todo->config);
         if(!empty($todo->cycle))
@@ -67,6 +68,7 @@ class todoModel extends model
             ->checkIF($todo->type == 'bug'   and $todo->idvalue == 0, 'idvalue', 'notempty')
             ->checkIF($todo->type == 'task'  and $todo->idvalue == 0, 'idvalue', 'notempty')
             ->checkIF($todo->type == 'story' and $todo->idvalue == 0, 'idvalue', 'notempty')
+            ->checkIF($todo->type == 'feedback' and $todo->idvalue == 0, 'idvalue', 'notempty')
             ->exec();
 
         if(!dao::isError())
@@ -94,7 +96,7 @@ class todoModel extends model
             {
                 $todo          = new stdclass();
                 $todo->account = $this->app->user->account;
-                if($this->post->date == false)
+                if($this->post->switchDate == 'on' or $this->post->date == false)
                 {
                     $todo->date = '2030-01-01';
                 }
@@ -417,6 +419,20 @@ class todoModel extends model
     }
 
     /**
+     * Get by id list.
+     *
+     * @param  array $todoIDList
+     * @access public
+     * @return object
+     */
+    public function getByList($todoIDList = 0) 
+    {    
+        return $this->dao->select('*')->from(TABLE_TODO)
+            ->beginIF($todoIDList)->where('id')->in($todoIDList)->fi()
+            ->fetchAll('id');
+    }
+
+    /**
      * Judge an action is clickable or not.
      *
      * @param  object    $todo
@@ -474,13 +490,13 @@ class todoModel extends model
             $newTodo->assignedBy = $todo->assignedBy;
             if($todo->assignedTo) $newTodo->assignedDate = $now;
 
-            $date   = '';
             $start  = strtotime($begin);
             $finish = strtotime("$today +{$beforeDays} days");
             foreach(range($start, $finish, 86400) as $today)
             {
                 $today     = date('Y-m-d', $today);
                 $lastCycle = zget($lastCycleList, $todoID, '');
+                $date      = '';
 
                 if($todo->config->type == 'day')
                 {
@@ -496,7 +512,7 @@ class todoModel extends model
                     if(strpos(",{$todo->config->week},", ",{$week},") !== false)
                     {
                         if(empty($lastCycle))         $date = $today;
-                        if($lastCycle->date < $today) $date = $today;
+                        if($lastCycle and $lastCycle->date < $today) $date = $today;
                     }
                 }
                 elseif($todo->config->type == 'month')
@@ -505,7 +521,7 @@ class todoModel extends model
                     if(strpos(",{$todo->config->month},", ",{$day},") !== false)
                     {
                         if(empty($lastCycle))         $date = $today;
-                        if($lastCycle->date < $today) $date = $today;
+                        if($lastCycle and $lastCycle->date < $today) $date = $today;
                     }
                 }
 
@@ -519,7 +535,6 @@ class todoModel extends model
 
                 $this->dao->insert(TABLE_TODO)->data($newTodo)->exec();
                 $this->action->create('todo', $this->dao->lastInsertID(), 'opened', '', '', $newTodo->account);
-
                 $lastCycleList[$todoID] = $newTodo;
             }
         }

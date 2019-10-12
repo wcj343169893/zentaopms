@@ -16,8 +16,11 @@
   <div class="btn-toolbar pull-left">
     <?php
     $recTotalLabel = " <span class='label label-light label-badge'>{$pager->recTotal}</span>";
+    echo "<span class='nav-title'>{$lang->testtask->common}: </span>";
     echo html::a(inlink('testtask', "type=wait"),       "<span class='text'>{$lang->testtask->wait}</span>" . ($type == 'wait' ? $recTotalLabel : ''), '', "class='btn btn-link" . ($type == 'wait' ? ' btn-active-text' : '') . "'");
     echo html::a(inlink('testtask', "type=done"),       "<span class='text'>{$lang->testtask->done}</span>" . ($type == 'done' ? $recTotalLabel : ''), '', "class='btn btn-link" . ($type == 'done' ? ' btn-active-text' : '') . "'");
+    echo "<span class='divider'></span>";
+    echo "<span class='nav-title'>{$lang->testcase->common}: </span>";
     echo html::a(inlink('testcase', "type=assigntome"), "<span class='text'>{$lang->testcase->assignToMe}</span>", '', "class='btn btn-link'");
     echo html::a(inlink('testcase', "type=openedbyme"), "<span class='text'>{$lang->testcase->openedByMe}</span>", '', "class='btn btn-link'");
     ?>
@@ -52,7 +55,7 @@
         <td class='nobr'><?php $task->build == 'trunk' ? print($lang->trunk) : print(html::a($this->createLink('build', 'view', "buildID=$task->build"), $task->buildName));?></td>
         <td><?php echo $task->begin?></td>
         <td><?php echo $task->end?></td>
-        <td class='status-testtask status-<?php echo $task->status?>'><?php echo $lang->testtask->statusList[$task->status];?></td>
+        <td class='status-testtask status-<?php echo $task->status?>'><?php echo $this->processStatus('testtask', $task);?></td>
         <td class='c-actions'>
           <?php
           common::printIcon('testtask',   'cases',    "taskID=$task->id", $task, 'list', 'sitemap');

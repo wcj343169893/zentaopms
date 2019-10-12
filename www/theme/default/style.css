@@ -8,13 +8,11 @@
 * @version     $Id: style.css 1454 2009-10-23 01:45:26Z wwccss $
 * @link        http://www.zentao.net
 */
-
-/* Change zentao icon on fixed footer with classic style image */
-#poweredBy .icon-zentao {background: url(images/main/icon.png) center no-repeat}
-#poweredBy .icon-zentao:before {visibility: hidden;}
-
 /* Finish task #5068*/
 .main-table .table{cursor:pointer;}
+.table-striped > tbody > tr:nth-child(2n+1) > td, .table-striped > tbody > tr:nth-child(2n+1) > th{background:none;}
+
+#pageNav .btn-group.angle-btn{margin-right:10px !important;}
 
 #dropMenu.show-right-col{width:502px;max-width:520px;}
 #dropMenu.has-search-text{width:250px;max-width:260px;}
@@ -25,3 +23,34 @@
 #dropMenu.show-right-col .col-left>.list-group{width:250px;max-width:260px;}
 #dropMenu.show-right-col .col-right>.list-group{width:250px;max-width:260px;}
 #dropMenu .col-footer{width:230px;}
+
+.main-actions .btn-toolbar .divider {margin-right:8px !important; margin-left: 8px !important;}
+.main-actions .btn-toolbar .btn + .btn {margin-left: 8px !important;}
+
+/* Pager v-align. */
+.pager>li>.pager-label { padding: 2px; line-height: 21px; }
+
+.side .leftmenu .nav-primary>li.active>a { background-color: #e7f1fc;}
+.side .leftmenu .nav-primary>li.active>a:hover {background-color: #006af1;}
+.label-severity:after{z-index:0 !important;}
+
+.modal-title{font-size: 14px;}
+.fixed-footer .text {color: #fff;}
+
+a.showMoreImage {
+display: block;
+height: 30px;
+line-height: 30px;
+background: #2B85C4;
+position: absolute;
+bottom: 0px;
+width: 100%;
+opacity: 0.7;
+text-align: center;
+color:#fff;
+}
+a.showMoreImage:hover{opacity: 1;}
+
+.color-darkblue{background:rgb(0,0,139)}
+.color-darkblue:hover{background:rgb(0,0,139)}
+.color-darkblue:focus{background:rgb(0,0,139)}

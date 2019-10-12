@@ -39,6 +39,7 @@ class chatModel extends model
 
     /**
      * Get signed time.
+     * Other program can extend this function.
      *
      * @param  string $account
      * @access public
@@ -46,12 +47,6 @@ class chatModel extends model
      */
     public function getSignedTime($account = '')
     {
-        $this->app->loadModuleConfig('attend');
-        if(strpos(',all,xuanxuan,', ",{$this->config->attend->signInClient},") === false) return '';
-
-        $attend = $this->dao->select('*')->from(TABLE_ATTEND)->where('account')->eq($account)->andWhere('`date`')->eq(date('Y-m-d'))->fetch();
-        if($attend) return strtotime("$attend->date $attend->signIn");
-
         return time();
     }
 
@@ -103,6 +98,15 @@ class chatModel extends model
         return $this->formatUsers($user);
     }
 
+    public function getGidByUserID($userID = 0)
+    {
+        return $this->dao->select('t1.gid')->from(TABLE_IM_CHAT)->alias('t1')
+            ->leftJoin(TABLE_IM_CHATUSER)->alias('t2')->on('t2.cgid=t1.gid')
+            ->where('t2.user')->eq($userID)
+            ->orWhere('t1.type')->eq('system')
+            ->fetchPairs('gid');
+    }
+    
     /**
      * Get user list.
      *
@@ -119,9 +123,6 @@ class chatModel extends model
             ->where(1)
             ->beginIF(empty($idList))
             ->andWhere('deleted')->eq('0')
-            ->andWhere('locked', true)->eq('0000-00-00 00:00:00')
-            ->orWhere('locked')->lt(helper::now())
-            ->markRight(1)
             ->fi()
             ->beginIF($status && $status == 'online')->andWhere('clientStatus')->ne('offline')->fi()
             ->beginIF($status && $status != 'online')->andWhere('clientStatus')->eq($status)->fi()
@@ -159,7 +160,7 @@ class chatModel extends model
 
             if(empty($idList))
             {
-                $this->app->loadLang('user', 'sys');
+                $this->app->loadLang('user');
                 $roles = $this->lang->user->roleList;
 
                 $allDepts = $this->loadModel('dept')->getListByType('dept');
@@ -237,19 +238,23 @@ class chatModel extends model
     /**
      * Get message list.
      *
-     * @param  array  $idList
+     * @param  array   $idList
+     * @param  object  $pager
+     * @param  string  $startDate
+     * @param  int     $userID
      * @access public
      * @return array
      */
-    public function getMessageList($idList = array(), $pager = null, $startDate = '')
+    public function getMessageList($idList = array(), $pager = null, $startDate = '', $userID = null)
     {
         $messages = $this->dao->select('*')
             ->from(TABLE_IM_MESSAGE)
             ->where('1')
             ->beginIF($idList)->andWhere('id')->in($idList)->fi()
             ->beginIF($startDate)->andWhere('date')->ge($startDate)->fi()
+            ->beginIF($userID != null)->andWhere('user')->eq($userID)->fi()
             ->orderBy('id_desc')
-            ->page($pager)
+            ->beginIF($pager != null)->page($pager)->fi()
             ->fetchAll();
 
         foreach($messages as $message)
@@ -267,6 +272,8 @@ class chatModel extends model
      * Get message list by cgid.
      *
      * @param  string $cgid
+     * @param  object $pager
+     * @param  string $startDate
      * @access public
      * @return array
      */
@@ -276,7 +283,7 @@ class chatModel extends model
             ->where('cgid')->eq($cgid)
             ->beginIF($startDate)->andWhere('date')->ge($startDate)->fi()
             ->orderBy('id_desc')
-            ->page($pager)
+            ->beginIF($pager != null)->page($pager)->fi()
             ->fetchAll();
 
         foreach($messages as $message)
@@ -288,6 +295,39 @@ class chatModel extends model
         }
 
         return $messages;
+    }
+
+    /**
+     * Get message number by time frame.
+     *
+     * @param  string $date
+     * @access public
+     * @return array
+     */
+    public function getMessageNumByTimeFrame()
+    {
+        $messages = $this->dao->select('date')->from(TABLE_IM_MESSAGE)
+            ->where('deleted')->eq(0)
+            ->orderBy('id_desc')
+            ->fetchAll();
+
+        $hourNum  = 0;
+        $dayNum   = 0;
+        $totalNum = count($messages); 
+        $hourDate = date('Y-m-d H:i:s', strtotime('-1 hour'));
+        $dayDate  = date('Y-m-d H:i:s', strtotime('-1 day'));
+        foreach($messages as $message)
+        {
+            if(strtotime($message->date) > strtotime($hourDate)) $hourNum++;
+            if(strtotime($message->date) > strtotime($dayDate))  $dayNum++;
+        }
+
+        $messagesCount = new stdClass();
+        $messagesCount->total = $totalNum;
+        $messagesCount->hour  = $hourNum;
+        $messagesCount->day   = $dayNum;
+        
+        return $messagesCount;
     }
 
     /**
@@ -437,7 +477,7 @@ class chatModel extends model
     public function getOfflineMessages($userID = 0)
     {
         $messages = $this->dao->select('t2.*')->from(TABLE_IM_MESSAGESTATUS)->alias('t1')
-            ->leftJoin(TABLE_IM_MESSAGE)->alias('t2')->on('t2.gid = t1.gid')
+            ->leftJoin(TABLE_IM_MESSAGE)->alias('t2')->on('t2.id = t1.message')
             ->where('t1.user')->eq($userID)
             ->andWhere('t1.status')->eq('waiting')
             ->andWhere('t2.type')->ne('notify')
@@ -445,8 +485,7 @@ class chatModel extends model
             ->fetchAll();
         if(empty($messages)) return array();
 
-        $this->dao->update(TABLE_IM_MESSAGESTATUS)
-            ->set('status')->eq('sent')
+        $this->dao->delete()->from(TABLE_IM_MESSAGESTATUS)
             ->where('user')->eq($userID)
             ->andWhere('status')->eq('waiting')
             ->exec();
@@ -489,14 +528,10 @@ class chatModel extends model
      */
     public function getChatGroupPairs()
     {
-        $groups = $this->dao->select('gid, name')->from(TABLE_IM_CHAT)
+        return $this->dao->select('gid, name')->from(TABLE_IM_CHAT)
             ->where('type')->eq('group')
             ->andWhere('dismissDate')->eq('0000-00-00 00:00:00')
             ->fetchPairs();
-
-        if(empty($groups)) return array();
-
-        return $groups;
     }
 
     /**
@@ -858,12 +893,6 @@ class chatModel extends model
 
                 $this->dao->insert(TABLE_IM_MESSAGE)->data($message)->exec();
                 $idList[] = $this->dao->lastInsertID();
-
-                $data = new stdClass();
-                $data->user   = $message->user;
-                $data->gid    = $message->gid;
-                $data->status = 'sent';
-                $this->dao->insert(TABLE_IM_MESSAGESTATUS)->data($data)->exec();
             }
             $chatList[$message->cgid] = $message->cgid;
         }
@@ -912,16 +941,9 @@ class chatModel extends model
      */
     public function saveOfflineMessages($messages = array(), $users = array())
     {
-        foreach($users as $user)
+        foreach($messages as $message)
         {
-            foreach($messages as $message)
-            {
-                $data = new stdClass();
-                $data->user   = $user;
-                $data->gid    = $message->gid;
-                $data->status = 'waiting';
-                $this->dao->replace(TABLE_IM_MESSAGESTATUS)->data($data)->exec();
-            }
+            $this->batchCreateMessageStatus($users, $message->id, 'waiting');
         }
         return !dao::isError();
     }
@@ -934,18 +956,18 @@ class chatModel extends model
     public function getOfflineNotify($userID)
     {
         $messages = $this->dao->select('t2.*')->from(TABLE_IM_MESSAGESTATUS)->alias('t1')
-                ->leftjoin(TABLE_IM_MESSAGE)->alias('t2')->on("t2.gid = t1.gid")
+                ->leftjoin(TABLE_IM_MESSAGE)->alias('t2')->on("t2.id = t1.message")
                 ->where('t1.user')->eq($userID)
                 ->andWhere('t1.status')->eq('waiting')
                 ->andWhere('t2.type')->eq('notify')
                 ->fetchAll();
 
         if(empty($messages)) return array();
-        $notify = $this->formatNotify($messages);
-        $gids   = array();
-        foreach($notify as $message) $gids[] = $message->gid;
+        $notify   = $this->formatNotify($messages);
+        $messages = array();
+        foreach($notify as $message) $messages[] = $message->id;
 
-        $this->dao->update(TABLE_IM_MESSAGESTATUS)->set('status')->eq('sent')->where('gid')->in($gids)->andWhere('user')->eq($userID)->exec();
+        $this->dao->delete()->from(TABLE_IM_MESSAGESTATUS)->where('message')->in($messages)->andWhere('user')->eq($userID)->exec();
         return $notify;
     }
 
@@ -978,6 +1000,53 @@ class chatModel extends model
     }
 
     /**
+     * Get history for login.
+     * @param $user
+     * @param $device
+     * @return object
+     */
+    public function getHistoryOutput($user, $device = 'desktop')
+    {
+        $output = new stdclass();
+        $output->module = 'chat';
+        $output->method = 'history';
+
+        $gids      = $this->getGidByUserID($user->id);
+        $messages  = array();
+        $startDate = $this->loadModel('setting')->getItem("owner={$user->account}&module=common&section=lastLogin&key={$device}");
+        
+        if(!empty($startDate) && !empty($gids))
+        {
+            $messages = $this->dao->select('*')->from(TABLE_IM_MESSAGE)
+                ->where('cgid')->in($gids)
+                ->beginIF($startDate)->andWhere('date')->ge($startDate)->fi()
+                ->orderBy('id_desc')->limit(500)
+                ->fetchAll();
+            foreach($messages as $message)
+            {
+                $message->id    = (int)$message->id;
+                $message->order = (int)$message->order;
+                $message->user  = (int)$message->user;
+                $message->date  = strtotime($message->date);
+            }
+        }
+        
+        $this->loadModel('setting')->setItem($user->account . '.common.lastLogin.' . $device, date(DT_DATETIME1));
+        if(dao::isError())
+        {
+            $output->result  = 'fail';
+            $output->message = 'Get offline notify fail.';
+        }
+        else
+        {
+            $output->result = 'success';
+            $output->users  = array($user->id);
+            $output->data   = $messages;
+        }
+        return $output;
+    }
+
+    /**
      * Get notify.
      * @access public
      * @return array
@@ -989,34 +1058,33 @@ class chatModel extends model
         $onlineUsers = array_keys($onlineUsers);
 
         $messages = $this->dao->select('t2.*')->from(TABLE_IM_MESSAGESTATUS)->alias('t1')
-                ->leftJoin(TABLE_IM_MESSAGE)->alias('t2')->on('t2.gid = t1.gid')
+                ->leftJoin(TABLE_IM_MESSAGE)->alias('t2')->on('t2.id = t1.message')
                 ->where('t1.status')->eq('waiting')
                 ->andWhere('t2.type')->eq('notify')
                 ->andWhere('t1.user')->in($onlineUsers)
-                ->groupBy('t1.gid')
+                ->groupBy('t1.message')
                 ->fetchAll();
         if(empty($messages)) return array();
 
-        $notify = $this->formatNotify($messages);
-        $data = array();
-        $gids = array();
+        $notify   = $this->formatNotify($messages);
+        $data     = array();
+        $messages = array();
         foreach($notify as $message)
         {
             foreach($onlineUsers as $userID)
             {
                 if((empty($message->user) && empty($message->users)) || in_array($userID, $message->users))
                 {
-                    $gids[$userID][] = $message->gid;
-                    $data[$userID][] = $message;
+                    $messages[$userID][] = $message->id;
+                    $data[$userID][]     = $message;
                 }
             }
         }
 
-        foreach($gids as $userID => $gid)
+        foreach($messages as $userID => $message)
         {
-            $this->dao->update(TABLE_IM_MESSAGESTATUS)
-                ->set('status')->eq('sent')
-                ->where('gid')->in($gid)
+            $this->dao->delete()->from(TABLE_IM_MESSAGESTATUS)
+                ->where('message')->in($message)
                 ->andWhere('user')->eq($userID)
                 ->exec();
         }
@@ -1132,15 +1200,22 @@ class chatModel extends model
 		$notify->data		 = json_encode($info);
 
 		$this->dao->insert(TABLE_IM_MESSAGE)->data($notify)->exec();
+		$message = $this->dao->lastInsertID();
+		$this->batchCreateMessageStatus($info['target'], $message, 'waiting');
+        return !dao::isError();
+    }
 
-		foreach($info['target'] as $user)
-		{
+    public function batchCreateMessageStatus($users, $message, $status = 'waiting')
+    {
+        if(empty($users) || empty($message)) return false;
+        foreach($users as $user)
+        {
             $data = new stdClass();
-            $data->user   = $user;
-            $data->gid    = $notify->gid;
-            $data->status = 'waiting';
-            $this->dao->insert(TABLE_IM_MESSAGESTATUS)->data($data)->exec();
-		}
+            $data->user    = $user;
+            $data->message = $message;
+            $data->status  = $status;
+            $this->dao->replace(TABLE_IM_MESSAGESTATUS)->data($data)->exec();
+        }
         return !dao::isError();
     }
 
@@ -1151,7 +1226,7 @@ class chatModel extends model
 	 */
 	public function createGID()
 	{
-	    $id = md5(microtime(). mt_rand());
+	    $id = md5(microtime() . mt_rand());
         return substr($id, 0, 8) . '-' . substr($id, 8, 4) . '-' . substr($id, 12, 4) . '-' . substr($id, 16, 4) . '-' . substr($id, 20, 12);
 	}
 
@@ -1178,17 +1253,11 @@ class chatModel extends model
     public function getExtensionList($userID)
     {
         $entries    = array();
-        $fileIDs    = array();
-        $files      = array();
         $allEntries = array();
         $time       = time();
-
-        $_SERVER['SCRIPT_NAME'] = str_replace('xuanxuan.php', 'sys/xuanxuan.php', $_SERVER['SCRIPT_NAME']);
-        $this->config->webRoot  = getRanzhiWebRoot();
-
-        $baseURL   = commonModel::getSysURL();
-        $entryList = $this->dao->select('*')->from(TABLE_ENTRY)->orderBy('`order`, id')->fetchAll();
-        $files     = $this->dao->select('id, pathname, objectID')->from(TABLE_FILE)->where('objectType')->eq('entry')->fetchAll('objectID');
+        $baseURL    = commonModel::getSysURL();
+        $entryList  = $this->dao->select('*')->from(TABLE_ENTRY)->orderBy('`order`, id')->fetchAll();
+        $files      = $this->dao->select('id, pathname, objectID')->from(TABLE_FILE)->where('objectType')->eq('entry')->fetchAll('objectID');
 
         foreach($entryList as $entry)
         {
@@ -1198,6 +1267,7 @@ class chatModel extends model
             $allEntries[] = $data;
         }
 
+        $_SERVER['SCRIPT_NAME'] = str_replace('x.php', 'index.php', $_SERVER['SCRIPT_NAME']);
         foreach($entryList as $entry)
         {
             if($entry->status != 'online') continue;
@@ -1231,103 +1301,335 @@ class chatModel extends model
      *
      * @param  int    $setting
      * @param  string $type
-     * @param  string $backend
      * @access public
      * @return void
      */
-    public function downloadXXD($backend = 'xxb', $setting, $type)
+    public function downloadXXD($setting, $downloadType)
     {
-        $data = new stdClass();
-        $data->uploadFileSize = $setting->uploadFileSize;
-        $data->https          = $setting->isHttps;
+        set_time_limit(0);
+        $system          = $this->getSystem($setting->os);
+        $version         = $this->config->xuanxuan->version;
+        $xxdDirectory    = $this->app->tmpRoot . 'xxd' . DS . $version;
+        $basePackage     = $xxdDirectory . DS . $system .  ".base.zip";
+        $xxdFileName     = 'xxd.' . $version . ".$system" .  ".zip";
+        $downloadCDNLink = $this->config->chat->xxdDownloadUrl . $version . "/xxd." . $version . ".$system" .  ".zip";
+
+        if(!is_dir($xxdDirectory)) mkdir($xxdDirectory, 0777, true);
+        if(!file_exists($basePackage) && $downloadType == 'package')
+        {
+            $agent = $this->app->loadClass('snoopy');
+            $agent->fetch($downloadCDNLink);
+            if(!empty(json_decode($agent->results)->error)) return array('result' => 'fail', 'message' => "$basePackage is not exists");
+            $fopenPackage = fopen($basePackage, "w");
+            fwrite($fopenPackage, $agent->results);
+        }
+
+        $data                 = new stdClass();
+        $data->xxdDirectory   = $xxdDirectory;
         $data->sslcrt         = $setting->sslcrt;
         $data->sslkey         = $setting->sslkey;
+        $data->basePackage    = $basePackage;
+        $data->xxdFileName    = $xxdFileName;
+        $data->host           = trim($this->getServer(), '/') . (zget($this->config->xuanxuan, 'backend', 'xxb') == 'ranzhi' ? dirname($this->config->webRoot) : $this->config->webRoot);
+
         $data->ip             = $setting->ip;
-        $data->chatPort       = $setting->chatPort;
         $data->commonPort     = $setting->commonPort;
+        $data->chatPort       = $setting->chatPort;
+        $data->https          = $setting->https;
+        $data->uploadPath     = 'files/';
+        $data->uploadFileSize = $setting->uploadFileSize;
+        $data->pollingInterval= isset($this->config->xuanxuan->pollingInterval) ? $this->config->xuanxuan->pollingInterval : 60;
         $data->maxOnlineUser  = isset($setting->maxOnlineUser) ? $setting->maxOnlineUser : 0;
+        $data->logPath        = 'log/';
+        $data->certPath       = 'cert/';
+        $data->debug          = 0;
         $data->key            = $this->config->xuanxuan->key;
-        $data->os             = $setting->os;
-        $data->version        = $this->config->xuanxuan->version;
-        $data->xxbLang        = $this->config->xuanxuan->xxbLang;
-        $data->downloadType   = $type;
 
-        $server = $this->getServer($backend);
-        $data->server = $server;
-        $data->host   = ($backend == 'xxb' or $backend == 'ranzhi') ? ($server . '/') : (trim($server, '/') . getWebRoot());
-
-        $url    = sprintf($this->config->chat->xxdDownloadUrl, $backend);
-        $result = commonModel::http($url, $data);
-
-        $this->loadModel('setting')->setItem('system.common.xxserver.installed', 1);
-
-        if($type == 'config')
+        if($downloadType == 'config')
         {
-            $this->sendDownHeader('xxd.conf', 'conf', $result, strlen($result));
+            $configContent = $this->createXxdConfigFile($data);
+            if(!empty($configContent)) $this->loadModel('file')->sendDownHeader('xxd.conf', 'conf', $configContent['zh']);
         }
-        else
+        elseif($downloadType == 'package')
         {
-            header("Location: $result");
+            $packageFileName = $this->createXxdPackage($data);
+            if(!empty($packageFileName)) return array('result' => 'success', 'message' => helper::createLink('chat', 'downloadXxdPackage', "xxdFileName=$xxdFileName"));
         }
 
-        exit;
+        return array('result' => 'fail', 'message' => 'error');
     }
 
     /**
-     * Send down header.
+     * create xxd config file
      *
-     * @param  int    $fileName
-     * @param  int    $fileType
-     * @param  int    $content
-     * @param  int    $fileSize
+     * @param object $setting
      * @access public
-     * @return void
+     * @return string
      */
-    public function sendDownHeader($fileName, $fileType, $content, $fileSize = 0)
+    public function createXxdConfigFile($setting)
     {
-        /* Set the downloading cookie, thus the export form page can use it to judge whether to close the window or not. */
-        setcookie('downloading', 1, 0, '', '', false, true);
+        $configParamsList = $this->config->chat->xxdConfig;
 
-        /* Append the extension name auto. */
-        $extension = '.' . $fileType;
-        if(strpos($fileName, $extension) === false) $fileName .= $extension;
+        // Replace template variable.
+        $lineMaxLength = 0;
+        foreach($configParamsList as  $configParams)
+        {
+            if($configParams == 'host' || $configParams == 'key')
+            {
+                $config[$configParams] = $setting->$configParams;
+            }
+            else
+            {
+                $config[$configParams] = $configParams . '=' . $setting->$configParams;
+                if($configParams == 'uploadFileSize') $config[$configParams] .= 'M';
+            }
+            $lineMaxLength = strlen($configParams) > $lineMaxLength ? strlen($configParams) : $lineMaxLength;
+        }
+        $lineMaxLength += 10;
 
-        /* urlencode the fileName for ie. */
-        $isIE11 = (strpos($this->server->http_user_agent, 'Trident') !== false and strpos($this->server->http_user_agent, 'rv:11.0') !== false);
-        if(strpos($this->server->http_user_agent, 'MSIE') !== false or $isIE11) $fileName = urlencode($fileName);
+        // Add parameter notes
+        $contentZH = '[server]' . "\n";
+        $contentEN = '[server]' . "\n";
+        foreach($config as $type => $configValue)
+        {
+            if($type == 'host' || $type == 'key') continue;
+            $configValue  = str_replace(PHP_EOL, '', $configValue);
+            $configlength = strlen($configValue);
 
-        /* Judge the content type. */
-        $mimes = $this->config->chat->mimes;
-        $contentType = isset($mimes[$fileType]) ? $mimes[$fileType] : $mimes['default'];
-        if(empty($fileSize) and $content) $fileSize = strlen($content);
+            for($i = 0; $i < ($lineMaxLength - $configlength); $i++) $configValue .= ' ';
+            $contentZH .= $configValue . $this->lang->chat->xxdConfigNote['zh'][$type] . "\n";
+            $contentEN .= $configValue . $this->lang->chat->xxdConfigNote['en'][$type] . "\n";
+        }
 
-        header("Content-type: $contentType");
-        header("Content-Disposition: attachment; filename=\"$fileName\"");
-        header("Content-length: {$fileSize}");
-        header("Pragma: no-cache");
-        header("Expires: 0");
-        die($content);
+        // Add backend
+        $backend     = "\n" . '[backend]' . "\n";
+        $backendFoot = 'default=' . $config['host'] . 'x.php,' . $config['key'];
+        $backendFoot = str_replace(PHP_EOL, '', $backendFoot) . "\n";
+        $backendZH   = $backend . $this->lang->chat->xxdConfigNote['zh']['backend'] . "\n" . $backendFoot;
+        $backendEN   = $backend . $this->lang->chat->xxdConfigNote['en']['backend'] . "\n" . $backendFoot;
+        $contentZH  .= $backendZH;
+        $contentEN  .= $backendEN;
+
+        return array('zh' => $contentZH, 'en' => $contentEN);
+    }
+
+    /**
+     * create xxd package
+     *
+     * @param object
+     * @access public
+     * @return string
+     */
+    public function createXxdPackage($setting)
+    {
+        $configContent = $this->createXxdConfigFile($setting);
+        if(empty($configContent)) return false;
+
+        // unzip package 
+        $this->app->loadClass('pclzip', true);
+        $basePackage = new pclzip($setting->basePackage);
+        $result  = $basePackage->extract(
+            PCLZIP_OPT_PATH, $setting->xxdDirectory
+        );
+        if($result == 0) $basePackage->errorInfo(true);
+
+        // Replace config file.
+        $baseFilePath = $result[0]['filename'];
+        $packageName  = $result[0]['stored_filename'];
+        unlink($baseFilePath . 'config/xxd.conf');
+        unlink($baseFilePath . 'config/xxd.en.conf');
+        file_put_contents($baseFilePath . 'config/xxd.conf', $configContent['zh']);
+        file_put_contents($baseFilePath . 'config/xxd.en.conf', $configContent['en']);
+
+        // https add certificate
+        if(isset($setting->https) && $setting->https == 'on')
+        {
+            if(!is_dir($baseFilePath . 'cert')) mkdir($baseFilePath . 'cert', 0777);
+            file_put_contents($baseFilePath . 'cert/xxd.crt', $setting->sslcrt);
+            file_put_contents($baseFilePath . 'cert/xxd.key', $setting->sslkey);
+        }
+
+        // zip xxd file 
+        chdir($setting->xxdDirectory);
+        $xxdZipName = $setting->xxdDirectory . "/" . $setting->xxdFileName;
+        $xxdZip     = new pclzip($xxdZipName);
+        $xxdResult  = $xxdZip->create($packageName, PCLZIP_OPT_TEMP_FILE_ON);
+        if($xxdResult == 0) return false;
+        return $xxdResult[0]['filename'];
+    }
+
+    /**
+     * revise operating system name.
+     *
+     * @param string $os name
+     * @access public
+     * @return string
+     */
+    public function getSystem($os)
+    {
+        switch($os)
+        {
+            case 'win_i386':
+               return 'win32';
+            case 'win_x86_64':
+               return 'win64';
+            case 'linux_i386':
+               return 'linux.ia32';
+            case 'linux_x86_64':
+               return 'linux.x64';
+            case 'darwin_x86_64':
+               return 'mac';
+        }
     }
 
     /**
      * Get server.
      *
-     * @param  string $backend
+     * @access public
+     * @return string
+     */
+    public function getServer()
+    {
+        if(!empty($this->config->xuanxuan->server)) return $this->config->xuanxuan->server;
+
+        return commonModel::getSysURL();
+    }
+
+    /**
+     * UploadFile a file.
+     *
+     * @param  string $fileName
+     * @param  string $path
+     * @param  int    $size
+     * @param  int    $time
+     * @param  int    $userID
+     * @param  string $users
+     * @param  object $chat
+     * @access public
+     * @return int
+     */
+    public function uploadFile($fileName, $path, $size, $time, $userID, $users, $chat)
+    {
+        $user      = $this->getUserByUserID($userID);
+        $extension = $this->loadModel('file')->getExtension($fileName);
+
+        $file = new stdclass();
+        $file->pathname    = $path;
+        $file->title       = rtrim($fileName, ".$extension");
+        $file->extension   = $extension;
+        $file->size        = $size;
+        $file->objectType  = 'chat';
+        $file->objectID    = $chat->id;
+        $file->createdBy   = !empty($user->account) ? $user->account : '';
+        $file->createdDate = date(DT_DATETIME1, $time);
+
+        $this->dao->insert(TABLE_FILE)->data($file)->exec();
+
+        $fileID = $this->dao->lastInsertID();
+        $path  .= md5($fileName . $fileID . $time);
+        $this->dao->update(TABLE_FILE)->set('pathname')->eq($path)->where('id')->eq($fileID)->exec();
+
+        return $fileID;
+    }
+
+    /**
+     * Save xxd start time.
+     * 
      * @access public
      * @return void
      */
-    public function getServer($backend = 'xxb')
+    public function setXxdStartTime()
     {
-        $server = commonModel::getSysURL();
+        $this->loadModel('setting')->setItem('system.common.xxd.start', helper::now());
 
-        if($backend == 'zentao')
+        return !dao::isError();
+    }
+
+    /**
+     * update last poll.
+     * 
+     * @access public
+     * @return void
+     */
+    public function updateLastPoll()
+    {
+        $this->loadModel('setting')->setItem('system.common.chat.lastPoll', helper::now());
+    }
+
+    /**
+     * check xxb config.
+     * 
+     * @access public
+     * @return bool
+     */
+    public function checkXXBConfig()
+    {
+        $result        = true;
+        $xxbConfig     = $this->config->xuanxuan;
+        $notEmptyFields = array('key', 'server', 'ip', 'chatPort', 'commonPort');
+
+        foreach($notEmptyFields as $field) if(empty($xxbConfig->$field)) $result = false;
+        if($xxbConfig->https == 'on')
         {
-            $this->app->loadConfig('mail');
-            if(!empty($this->config->mail->domain)) $server = $this->config->mail->domain;
+            if(empty($xxbConfig->sslcrt)) $result = false;
+            if(empty($xxbConfig->sslkey)) $result = false;
+        }
+        return $result;
+    }
+
+    /**
+     * Get xxd run time. 
+     * 
+     * @access public
+     * @return Y/H
+     */
+    public function getXxdRunTime($timestamp, $count = 0)
+    {
+        if($count > 1) return;
+
+        if($timestamp > 86400)
+        {
+            return floor($timestamp / 86400) . $this->lang->chat->day . $this->getXxdRunTime($timestamp%86400, ++$count);
+        }
+        else if($timestamp > 3600)
+        {
+            return floor($timestamp / 3600) . $this->lang->chat->hours . $this->getXxdRunTime($timestamp%3600, ++$count);
+        }
+        else if($timestamp > 60)
+        {
+            return floor($timestamp / 60) . $this->lang->chat->minute . $this->getXxdRunTime($timestamp%60, ++$count);
+        }
+        else
+        {
+            return $timestamp . $this->lang->chat->secs;
+        }
+    }
+
+    /**
+     * Get xxd status. 
+     * 
+     * @access public
+     * @return Y/H
+     */
+    public function getXxdStatus()
+    {
+        $this->app->loadLang('client');
+        $now          = helper::now();
+        $xxdStatus    = 'offline';
+        $polling      = empty($this->config->xuanxuan->pollingInterval) ? 60 : $this->config->xuanxuan->pollingInterval;
+        $lastPoll     = $this->loadModel('setting')->getItem("owner=system&module=common&section=chat&key=lastPoll");
+        $xxdStartDate = zget($this->config->xxd, 'start', $this->lang->client->noData);
+
+        if((strtotime($now) - strtotime($xxdStartDate) < $polling) || (strtotime($now) - strtotime($lastPoll)) < (3 + $polling))
+        {
+            $xxdStatus = 'online';
+        }
+        else if((strtotime($now) - strtotime($lastPoll)) > (3 + $polling))
+        {
+            $xxdStatus = 'offline';
         }
 
-        if(!empty($this->config->xuanxuan->server)) $server = $this->config->xuanxuan->server;
-
-        return $server;
+        return $xxdStatus;
     }
+
 }

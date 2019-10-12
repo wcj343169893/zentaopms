@@ -1,9 +1,16 @@
 <?php
 $lang->xuanxuan = new stdclass();
+$lang->admin->menu->xuanxuan = array('link' => '客戶端|admin|xuanxuan', 'subModule' => 'client,setting');
+$lang->admin->menuOrder[6]   = 'xuanxuan';
 
-$lang->admin->menu->sso['link'] = '整合|admin|xuanxuan';
-if(!isset($lang->admin->menu->sso['alias'])) $lang->admin->menu->sso['alias'] = '';
-$lang->admin->menu->sso['alias'] = $lang->admin->menu->sso['alias'] . ',sso';
+$lang->admin->subMenu->xuanxuan = new stdclass();
+$lang->admin->subMenu->xuanxuan->index   = array('link' => '首頁|admin|xuanxuan');
+$lang->admin->subMenu->xuanxuan->setting = array('link' => '參數|setting|xuanxuan');
+$lang->admin->subMenu->xuanxuan->update  = array('link' => '更新|client|browse', 'subModule' => 'client');
+$lang->admin->subMenuOrder->xuanxuan[0]  = 'index';
+$lang->admin->subMenuOrder->xuanxuan[5]  = 'setting';
+$lang->admin->subMenuOrder->xuanxuan[10] = 'update';
 
-$lang->admin->subMenu->sso->xuanxuan = '客戶端整合|admin|xuanxuan';
-$lang->admin->subMenuOrder->sso[4] = 'xuanxuan';
+$lang->menugroup->client = 'admin';
+
+$lang->confirmDelete = '您確定要執行刪除操作嗎？';

@@ -1,7 +1,9 @@
+<?php if(isset($pageCSS)) css::internal($pageCSS);?>
 <div class="detail">
   <h2 class="detail-title">
     <span class="label-id"><?php echo $task->id?></span>
     <span class="label label-task"><?php echo $lang->task->common?></span>
+    <span class="label label-task"><?php echo $this->processStatus('task', $task);?></span>
     <span class="title">
       <?php if($task->parent > 0) echo '<span class="label no-margin label-badge label-light">' . $this->lang->task->childrenAB . '</span>';?>
       <?php if(!empty($task->team)) echo '<span class="label no-margin label-badge label-light">' . $this->lang->task->multipleAB . '</span>';?>
@@ -10,10 +12,9 @@
   </h2>
   <div class="detail-content article-content">
     <div class="infos">
-      <span class="status-task status-wait"><span class="label label-dot"></span> <?php echo zget($lang->task->statusList, $task->status);?></span>
-      <span><?php echo $lang->task->estimate;?> <?php echo $task->estimate . $lang->workingHour;?></span>
-      <span><?php echo $lang->task->consumed;?> <?php echo round($task->consumed, 2) . $lang->workingHour;?></span>
-      <span><?php echo $lang->task->left;?> <?php echo $task->left . $lang->workingHour;?></span>
+      <span><?php echo $lang->task->estimate;?> <?php echo $task->estimate . ' ' . $lang->workingHour;?></span>
+      <span><?php echo $lang->task->consumedAB;?> <?php echo round($task->consumed, 2) . ' ' . $lang->workingHour;?></span>
+      <span><?php echo $lang->task->leftAB;?> <?php echo $task->left . ' ' . $lang->workingHour;?></span>
     </div>
     <div class="infos">
       <span><?php echo $lang->task->type;?> <?php echo $lang->task->typeList[$task->type];?></span>
@@ -80,3 +81,6 @@
 <?php echo $this->fetch('file', 'printFiles', array('files' => $task->files, 'fieldset' => 'true'));?>
 <?php $actionFormLink = $this->createLink('action', 'comment', "objectType=task&objectID=$task->id");?>
 <?php include '../../common/view/action.html.php';?>
+<script>
+<?php if(isset($pageJS)) echo $pageJS;?>
+</script>
